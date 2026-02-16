@@ -38,6 +38,30 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Profile',
     component: () => import('@/views/user/Profile.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-courses',
+    name: 'MyCourses',
+    component: () => import('@/views/user/MyCourses.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/study-records',
+    name: 'StudyRecords',
+    component: () => import('@/views/user/StudyRecords.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: () => import('@/views/user/ChangePassword.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notes',
+    name: 'Notes',
+    component: () => import('@/views/user/Notes.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

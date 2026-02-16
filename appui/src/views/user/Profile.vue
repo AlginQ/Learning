@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
-import { User, Edit, Camera, Lock } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
+const router = useRouter()
 const activeTab = ref('profile')
 const loading = ref(false)
 
@@ -36,8 +38,19 @@ const handleUpdateProfile = () => {
 }
 
 const handleChangePassword = () => {
-  // 密码修改逻辑
-  ElMessage.info('密码修改功能待实现')
+  router.push('/change-password')
+}
+
+const goToMyCourses = () => {
+  router.push('/my-courses')
+}
+
+const goToStudyRecords = () => {
+  router.push('/study-records')
+}
+
+const goToNotes = () => {
+  router.push('/notes')
 }
 </script>
 
@@ -75,6 +88,25 @@ const handleChangePassword = () => {
               <div class="stat-item">
                 <div class="stat-value">24.5</div>
                 <div class="stat-label">学习时长(小时)</div>
+              </div>
+            </div>
+            
+            <div class="quick-links">
+              <div class="link-item" @click="goToMyCourses">
+                <el-icon><VideoPlay /></el-icon>
+                <span>我的课程</span>
+              </div>
+              <div class="link-item" @click="goToStudyRecords">
+                <el-icon><DataAnalysis /></el-icon>
+                <span>学习记录</span>
+              </div>
+              <div class="link-item" @click="goToNotes">
+                <el-icon><Document /></el-icon>
+                <span>我的笔记</span>
+              </div>
+              <div class="link-item">
+                <el-icon><Collection /></el-icon>
+                <span>我的收藏</span>
               </div>
             </div>
           </div>
@@ -291,6 +323,36 @@ const handleChangePassword = () => {
 .user-stats {
   display: flex;
   justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #eee;
+}
+
+.link-item:hover {
+  background: #f0f8ff;
+  border-color: #409eff;
+  transform: translateX(5px);
+}
+
+.link-item .el-icon {
+  font-size: 18px;
+  color: #409eff;
 }
 
 .stat-item {

@@ -1,5 +1,5 @@
 {
-  "name": "learning-system-frontend",
+  "name": "appui",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,14 +9,15 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
-    "pinia": "^2.1.7",
+    "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.6.2",
     "element-plus": "^2.4.4",
-    "@element-plus/icons-vue": "^2.3.1"
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@types/node": "^25.2.3",
     "@vitejs/plugin-vue": "^4.5.2",
     "@vue/eslint-config-typescript": "^12.0.0",
     "@vue/tsconfig": "^0.5.0",

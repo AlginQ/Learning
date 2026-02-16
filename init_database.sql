@@ -180,12 +180,14 @@ INSERT IGNORE INTO `lesson` (`chapter_id`, `course_id`, `title`, `description`, 
 (7, 3, 'Spring Boot起步', '创建第一个Spring Boot项目', 'https://example.com/video8.mp4', 2000, 1, 1),
 (7, 3, '自动配置原理', '理解Spring Boot自动配置机制', 'https://example.com/video9.mp4', 2500, 2, 0);
 
--- 插入默认管理员用户 (密码: admin123) - 使用正确的BCrypt加密
-INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb0bta/OauRxaOKSr.QhqyD2R5FKvMQjmHoLkm5Sy', 'admin@example.com', '管理员', 'ADMIN');
+-- 插入默认管理员用户 (密码: admin123)
+-- 注意：这里的密码哈希是通过系统PasswordUtil生成的标准BCrypt哈希
+INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`, `status`) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb0bta/OauRxaOKSr.QhqyD2R5FKvMQjmHoLkm5Sy', 'admin@example.com', '管理员', 'ADMIN', 1);
 
--- 插入测试普通用户 (密码: user123) - 使用正确的BCrypt加密
-INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`) VALUES
-('testuser', '$2a$10$r3.l0wUOsEWAmfnJdqHb2e.nds75HiRQDQiM7VcxcrVQMvDyB9gsO', 'user@example.com', '测试用户', 'USER');
+-- 插入测试普通用户 (密码: user123)
+-- 注意：这里的密码哈希是通过系统PasswordUtil生成的标准BCrypt哈希
+INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`, `status`) VALUES
+('testuser', '$2a$10$r3.l0wUOsEWAmfnJdqHb2e.nds75HiRQDQiM7VcxcrVQMvDyB9gsO', 'user@example.com', '测试用户', 'USER', 1);
 
 COMMIT;

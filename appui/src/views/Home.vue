@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { User, Lock, Search, Menu } from '@element-plus/icons-vue'
+import { isAdmin as checkIsAdmin } from '@/utils/permission'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeIndex = ref('1')
 const searchKeyword = ref('')
+
+// 权限判断
+const isAdmin = computed(() => userStore.isLogin)
+const isCurrentUserAdmin = computed(() => checkIsAdmin())
 
 const handleSelect = (key: string) => {
   switch (key) {
@@ -23,6 +28,20 @@ const handleSelect = (key: string) => {
         router.push('/study')
       } else {
         router.push('/login')
+      }
+      break
+    case '4':
+      if (userStore.isLogin) {
+        router.push('/my-courses')
+      } else {
+        router.push('/login')
+      }
+      break
+    case '5':
+      if (isCurrentUserAdmin.value) {
+        router.push('/admin/users')
+      } else {
+        router.push('/')
       }
       break
   }
@@ -60,7 +79,9 @@ const handleLogout = () => {
           >
             <el-menu-item index="1">首页</el-menu-item>
             <el-menu-item index="2">课程</el-menu-item>
-            <el-menu-item index="3">学习中心</el-menu-item>
+            <el-menu-item v-if="isAdmin" index="3">学习中心</el-menu-item>
+            <el-menu-item v-if="isAdmin" index="4">我的课程</el-menu-item>
+            <el-menu-item v-if="isAdmin && isCurrentUserAdmin" index="5">管理中心</el-menu-item>
           </el-menu>
         </div>
         
@@ -144,7 +165,7 @@ const handleLogout = () => {
     
     <!-- 底部 -->
     <el-footer class="footer">
-      <p>© 2024 在线学习平台. All rights reserved.</p>
+      <p>© 2026 在线学习平台. All rights reserved.</p>
     </el-footer>
   </div>
 </template>

@@ -7,7 +7,7 @@ import com.fafu.learning.mapper.UserMapper;
 import com.fafu.learning.service.UserService;
 import com.fafu.learning.dto.UserLoginDTO;
 import com.fafu.learning.dto.UserRegisterDTO;
-import com.fafu.learning.vo.LoginVO;
+import com.fafu.learning.vo.LoginResponseVO;
 import com.fafu.learning.vo.UserInfoVO;
 import com.fafu.learning.utils.JwtUtil;
 import com.fafu.learning.utils.PasswordUtil;
@@ -15,6 +15,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -57,7 +59,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
     
     @Override
-    public LoginVO login(UserLoginDTO loginDTO) {
+    public LoginResponseVO login(UserLoginDTO loginDTO) {
         // 根据用户名或邮箱查找用户
         User user = getByUsername(loginDTO.getUsername());
         if (user == null) {
@@ -85,12 +87,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
         
         // 构造返回结果
-        LoginVO loginVO = new LoginVO();
+        LoginResponseVO loginVO = new LoginResponseVO();
         loginVO.setToken(token);
         
         UserInfoVO userInfoVO = new UserInfoVO();
         BeanUtils.copyProperties(user, userInfoVO);
-        loginVO.setUserInfo(userInfoVO);
+        loginVO.setUsername(user.getUsername());
+        loginVO.setRole(user.getRole());
         
         return loginVO;
     }
@@ -127,5 +130,64 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setId(userId);
         user.setLastLoginTime(LocalDateTime.now());
         updateById(user);
+    }
+    
+    @Override
+    public List<UserInfoVO> getAllUsers() {
+        // TODO: 实现获取所有用户逻辑
+        // List<User> users = list();
+        // return users.stream()
+        //     .map(user -> {
+        //         UserInfoVO vo = new UserInfoVO();
+        //         BeanUtils.copyProperties(user, vo);
+        //         return vo;
+        //     })
+        //     .collect(Collectors.toList());
+        return List.of();
+    }
+    
+    @Override
+    public void deleteUserById(Long id) {
+        // TODO: 实现删除用户逻辑
+        // User user = getById(id);
+        // if (user == null) {
+        //     throw new RuntimeException("用户不存在");
+        // }
+        // removeById(id);
+    }
+    
+    @Override
+    public UserInfoVO getUserById(Long id) {
+        // TODO: 实现根据ID获取用户详情逻辑
+        // User user = getById(id);
+        // if (user == null) {
+        //     throw new RuntimeException("用户不存在");
+        // }
+        // UserInfoVO userInfoVO = new UserInfoVO();
+        // BeanUtils.copyProperties(user, userInfoVO);
+        // return userInfoVO;
+        return null;
+    }
+    
+    @Override
+    public void disableUser(Long id) {
+        // TODO: 实现禁用用户逻辑
+        // User user = getById(id);
+        // if (user == null) {
+        //     throw new RuntimeException("用户不存在");
+        // }
+        // user.setStatus(0);
+        // updateById(user);
+    }
+    
+    @Override
+    public void enableUser(Long id) {
+        // TODO: 实现启用用户逻辑
+        // User user = getById(id);
+        // if (user == null) {
+        //     throw new RuntimeException("用户不存在");
+        // }
+        // user.setStatus(1);
+        // updateById(user);
     }
 }

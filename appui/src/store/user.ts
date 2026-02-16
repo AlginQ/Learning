@@ -26,15 +26,26 @@ export const useUserStore = defineStore('user', {
     async login(loginData: LoginRequest) {
       try {
         const response = await loginApi(loginData)
-        const { token, userInfo } = response.data
+        const { token, username, role } = response.data
+        
+        // 保存token到localStorage，以便后续API调用使用
+        localStorage.setItem('token', token)
+        
+        // 获取用户详细信息
+        const userInfoResponse = await getUserInfoApi()
+        const userInfo = userInfoResponse.data
         
         this.token = token
         this.userInfo = userInfo
         this.isAuthenticated = true
         
-        localStorage.setItem('token', token)
+        // 保存到localStorage
+        localStorage.setItem('role', role)
+        localStorage.setItem('username', username)
+        
         return response
       } catch (error) {
+        console.error('登录过程出错:', error)
         throw error
       }
     },
@@ -66,6 +77,8 @@ export const useUserStore = defineStore('user', {
       this.token = null
       this.isAuthenticated = false
       localStorage.removeItem('token')
+      localStorage.removeItem('role')
+      localStorage.removeItem('username')
     }
   }
 })

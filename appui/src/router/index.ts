@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -62,6 +63,34 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Notes',
     component: () => import('@/views/user/Notes.vue'),
     meta: { requiresAuth: true }
+  },
+  // 管理员路由 - 修复双层侧边栏问题
+  {
+    path: '/admin',
+    name: 'Admin',
+    redirect: '/admin/users',
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: 'users',
+        name: 'UserManagement',
+        component: () => import('@/views/admin/UserManagement.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'courses',
+        name: 'CourseManagement',
+        component: () => import('@/views/admin/CourseManagement.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      }
+    ]
+  },
+  // 权限演示页面
+  {
+    path: '/permission-demo',
+    name: 'PermissionDemo',
+    component: () => import('@/views/PermissionDemo.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -73,12 +102,38 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
+  const userRole = localStorage.getItem('role') || 'USER'
   
+  // 已登录用户访问登录页时，自动跳转到首页
+  if (to.path === '/login' && token) {
+    next('/')
+    return
+  }
+  
+  // 检查是否需要认证
   if (to.meta.requiresAuth && !token) {
     next('/login')
-  } else {
-    next()
+    return
   }
+  
+  // 对 /admin/** 路径做权限校验
+  if (to.path.startsWith('/admin')) {
+    // 检查用户角色是否为ADMIN
+    if (userRole !== 'ADMIN') {
+      ElMessage.error('无管理员权限')
+      next('/login')
+      return
+    }
+  }
+  
+  // 检查路由元信息中的管理员权限要求
+  if (to.meta.requiresAdmin && userRole !== 'ADMIN') {
+    ElMessage.error('无管理员权限')
+    next('/login')
+    return
+  }
+  
+  next()
 })
 
 export default router

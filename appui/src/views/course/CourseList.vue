@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCourseListApi, getCategoryApi } from '@/api/course'
+import { getCourseListApi, getCategoryApi, getTeacherListApi } from '@/api/course'
 import type { Course, Category } from '@/types/course'
 import { Search } from '@element-plus/icons-vue'
 
@@ -10,6 +10,7 @@ const router = useRouter()
 
 const courses = ref<Course[]>([])
 const categories = ref<Category[]>([])
+const teachers = ref<any[]>([])
 const loading = ref(false)
 const total = ref(0)
 
@@ -31,6 +32,28 @@ const loadCategories = async () => {
   } catch (error) {
     console.error('获取分类失败:', error)
   }
+}
+
+// 获取教师列表
+const loadTeachers = async () => {
+  try {
+    const response = await getTeacherListApi()
+    teachers.value = response.data
+  } catch (error) {
+    console.error('获取教师列表失败:', error)
+  }
+}
+
+// 根据ID获取教师名称
+const getTeacherName = (teacherId: number) => {
+  const teacher = teachers.value.find(t => t.id === teacherId)
+  return teacher ? teacher.name : '未知讲师'
+}
+
+// 根据ID获取分类名称
+const getCategoryName = (categoryId: number) => {
+  const category = categories.value.find(c => c.id === categoryId)
+  return category ? category.name : '未分类'
 }
 
 // 获取课程列表
@@ -73,7 +96,7 @@ const handlePageChange = (page: number) => {
 
 // 跳转到课程详情
 const goToCourseDetail = (id: number) => {
-  router.push(`/course/${id}`)
+  router.push(`/course-detail/${id}`)
 }
 
 onMounted(() => {
@@ -83,6 +106,7 @@ onMounted(() => {
   }
   
   loadCategories()
+  loadTeachers()
   loadCourses()
 })
 </script>
@@ -164,7 +188,7 @@ onMounted(() => {
               <div class="course-meta">
                 <div class="meta-item">
                   <el-icon><User /></el-icon>
-                  <span>{{ course.teacher.name }}</span>
+                  <span>{{ getTeacherName(course.teacherId) }}</span>
                 </div>
                 <div class="meta-item">
                   <el-icon><Collection /></el-icon>
@@ -183,7 +207,7 @@ onMounted(() => {
               
               <div class="course-stats">
                 <span>{{ course.lessonCount }}课时</span>
-                <span class="category-tag">{{ course.category.name }}</span>
+                <span class="category-tag">{{ getCategoryName(course.categoryId) }}</span>
               </div>
             </div>
           </div>

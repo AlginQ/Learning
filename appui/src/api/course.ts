@@ -26,3 +26,8 @@ export const getCourseDetailApi = (id: number) => {
 export const getCourseLessonsApi = (courseId: number) => {
   return request.get<ApiResponse<any>>(`/courses/${courseId}/lessons`)
 }
+
+// 获取教师列表
+export const getTeacherListApi = () => {
+  return request.get<ApiResponse<any[]>>('/teachers')
+}

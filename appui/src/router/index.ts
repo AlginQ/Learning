@@ -29,6 +29,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/course/CourseDetail.vue')
   },
   {
+    path: '/course-detail/:id',
+    name: 'CourseDetailPage',
+    component: () => import('@/views/course/CourseDetailPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/study',
     name: 'StudyCenter',
     component: () => import('@/views/study/StudyCenter.vue'),

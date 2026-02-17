@@ -120,7 +120,7 @@ onMounted(() => {
       
       <div v-else-if="studyRecords.length === 0" class="empty-state">
         <el-empty description="暂无学习记录，快去选择感兴趣的课程开始学习吧！">
-          <el-button type="primary" @click="$router.push('/courses')">浏览课程</el-button>
+          <el-button type="primary" @click="$router.push('/courses')">所有课程</el-button>
         </el-empty>
       </div>
       

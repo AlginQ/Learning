@@ -23,6 +23,7 @@ const activeMenu = computed(() => {
   const routePath = router.currentRoute.value.path
   if (routePath === '/') return 'home'
   if (routePath === '/my-courses') return 'my-courses'
+  if (routePath === '/courses') return 'all-courses'
   if (routePath === '/study') return 'study-center'
   if (routePath === '/admin/users') return 'admin-users'
   if (routePath === '/admin/courses') return 'admin-courses'
@@ -44,6 +45,13 @@ const menuItems = computed(() => {
       title: '我的课程',
       icon: VideoPlay,
       path: '/my-courses',
+      roles: ['USER', 'ADMIN'] // 所有用户可见
+    },
+    {
+      index: 'all-courses',
+      title: '课程',
+      icon: VideoPlay,
+      path: '/courses',
       roles: ['USER', 'ADMIN'] // 所有用户可见
     },
     {
@@ -86,9 +94,18 @@ const menuItems = computed(() => {
 
 // 菜单点击处理
 const handleMenuSelect = (index: string) => {
+  console.log('菜单点击事件触发:', index)
   const menuItem = menuItems.value.find(item => item.index === index)
+  console.log('找到的菜单项:', menuItem)
   if (menuItem) {
-    router.push(menuItem.path)
+    console.log('准备跳转到:', menuItem.path)
+    router.push(menuItem.path).then(() => {
+      console.log('路由跳转完成')
+    }).catch(err => {
+      console.error('路由跳转失败:', err)
+    })
+  } else {
+    console.warn('未找到对应的菜单项')
   }
 }
 

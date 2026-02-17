@@ -17,9 +17,9 @@
           <p>{{ course.description }}</p>
         </div>
         <div class="course-meta">
-          <el-tag>{{ course.categoryName }}</el-tag>
-          <el-tag type="success">{{ course.difficulty }}</el-tag>
-          <el-tag type="warning">{{ course.duration }}课时</el-tag>
+          <el-tag>{{ course.category.name }}</el-tag>
+          <el-tag type="success">{{ course.rating }}分</el-tag>
+          <el-tag type="warning">{{ course.lessonCount }}课时</el-tag>
         </div>
       </el-card>
       
@@ -46,7 +46,7 @@
                 >
                   <el-icon><VideoPlay /></el-icon>
                   <span class="lesson-title">{{ lesson.title }}</span>
-                  <span class="lesson-duration">{{ lesson.duration }}</span>
+                  <span class="lesson-duration">{{ formatDuration(lesson.duration) }}</span>
                 </div>
               </div>
             </el-collapse-item>
@@ -86,57 +86,61 @@ const activeChapter = ref<string>('')
 
 // 模拟数据
 const mockCourse: Course = {
-  id: courseId,
+  id: 1,
   title: 'Vue 3 入门教程',
   description: '从零开始学习 Vue 3，掌握现代前端开发核心技术',
   coverImage: '',
-  categoryName: '前端开发',
-  difficulty: '初级',
-  duration: 20,
   price: 0,
-  status: 'published',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
+  category: {
+    id: 1,
+    name: '前端开发'
+  },
+  teacher: {
+    id: 1,
+    name: '张老师'
+  },
+  lessonCount: 20,
+  studentCount: 1234,
+  rating: 4.8,
+  createTime: new Date().toISOString()
 }
 
 const mockChapters: Chapter[] = [
   {
-    id: '1',
-    courseId: courseId,
+    id: 1,
     title: '第一章：Vue 3 基础',
-    orderNum: 1,
+    chapterNumber: 1,
     lessons: [
       {
-        id: '1-1',
-        chapterId: '1',
+        id: 1,
         title: 'Vue 3 简介',
         videoUrl: '',
-        duration: '15:30',
-        orderNum: 1
+        duration: 930,
+        lessonNumber: 1,
+        isFree: true
       },
       {
-        id: '1-2',
-        chapterId: '1',
+        id: 2,
         title: '响应式系统',
         videoUrl: '',
-        duration: '22:15',
-        orderNum: 2
+        duration: 1335,
+        lessonNumber: 2,
+        isFree: true
       }
     ]
   },
   {
-    id: '2',
-    courseId: courseId,
+    id: 2,
     title: '第二章：组件开发',
-    orderNum: 2,
+    chapterNumber: 2,
     lessons: [
       {
-        id: '2-1',
-        chapterId: '2',
+        id: 3,
         title: '组件基础',
         videoUrl: '',
-        duration: '18:45',
-        orderNum: 1
+        duration: 1125,
+        lessonNumber: 1,
+        isFree: false
       }
     ]
   }
@@ -144,6 +148,13 @@ const mockChapters: Chapter[] = [
 
 const goBack = () => {
   router.go(-1)
+}
+
+// 格式化时长显示
+const formatDuration = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
 const startLesson = (lesson: any) => {

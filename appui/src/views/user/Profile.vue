@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()

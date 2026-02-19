@@ -21,6 +21,7 @@ export interface Course {
   coverImage?: string
   price: number
   discountPrice?: number
+  isFree: boolean
   category: Category
   teacher: Teacher
   lessonCount: number

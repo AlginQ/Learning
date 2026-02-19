@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 import { Lock } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const userStore = useUserStore()

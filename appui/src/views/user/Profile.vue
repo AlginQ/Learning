@@ -1,24 +1,40 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document, Upload, Refresh } from '@element-plus/icons-vue'
+import { updateUserProfile, updateUserAvatar, changePassword } from '@/api/auth'
 
 const userStore = useUserStore()
 const router = useRouter()
 const activeTab = ref('profile')
 const loading = ref(false)
+const avatarLoading = ref(false)
 
-const form = reactive({
+// 个人信息表单
+const profileForm = reactive({
   nickname: userStore.currentUser?.nickname || '',
   email: userStore.currentUser?.email || '',
-  phone: '',
-  gender: 0,
-  birthday: ''
+  phone: userStore.currentUser?.phone || '',
+  gender: userStore.currentUser?.gender || 0,
+  birthday: userStore.currentUser?.birthday || ''
 })
 
-const rules = {
+// 头像相关
+const avatarDialogVisible = ref(false)
+const avatarPreview = ref('')
+const currentAvatar = ref(userStore.currentUser?.avatar || '')
+
+// 密码修改表单
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// 表单验证规则
+const profileRules = {
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
     { max: 50, message: '昵称长度不能超过50位', trigger: 'blur' }
@@ -29,19 +45,109 @@ const rules = {
   ]
 }
 
-const handleUpdateProfile = () => {
+const passwordRules = {
+  oldPassword: [
+    { required: true, message: '请输入原密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { 
+      validator: (rule: any, value: string, callback: Function) => {
+        if (value !== passwordForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'blur' 
+    }
+  ]
+}
+
+// 初始化表单数据
+const initFormData = () => {
+  profileForm.nickname = userStore.currentUser?.nickname || ''
+  profileForm.email = userStore.currentUser?.email || ''
+  profileForm.phone = userStore.currentUser?.phone || ''
+  profileForm.gender = userStore.currentUser?.gender || 0
+  profileForm.birthday = userStore.currentUser?.birthday || ''
+  currentAvatar.value = userStore.currentUser?.avatar || ''
+}
+
+// 更新个人信息
+const handleUpdateProfile = async () => {
   loading.value = true
-  // 模拟更新个人信息
-  setTimeout(() => {
+  try {
+    const response = await updateUserProfile(profileForm)
+    if (response.code === 200) {
+      // 更新本地存储
+      const updatedUser = {
+        ...userStore.currentUser,
+        ...profileForm
+      }
+      userStore.setCurrentUser(updatedUser)
+      ElMessage.success('个人信息更新成功')
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '更新失败')
+  } finally {
     loading.value = false
-    ElMessage.success('个人信息更新成功')
-  }, 1000)
+  }
 }
 
-const handleChangePassword = () => {
-  router.push('/change-password')
+// 处理头像上传
+const handleAvatarUpload = () => {
+  // 这里应该集成实际的文件上传逻辑
+  // 暂时使用模拟数据
+  avatarPreview.value = 'https://via.placeholder.com/200x200/409EFF/FFFFFF?text=Avatar'
+  avatarDialogVisible.value = true
 }
 
+// 确认更换头像
+const confirmAvatarChange = async () => {
+  avatarLoading.value = true
+  try {
+    const response = await updateUserAvatar(avatarPreview.value)
+    if (response.code === 200) {
+      currentAvatar.value = avatarPreview.value
+      userStore.currentUser!.avatar = avatarPreview.value
+      ElMessage.success('头像更新成功')
+      avatarDialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '头像更新失败')
+  } finally {
+    avatarLoading.value = false
+  }
+}
+
+// 修改密码
+const handleChangePassword = async (formEl: any) => {
+  if (!formEl) return
+  
+  try {
+    const valid = await formEl.validate()
+    if (valid) {
+      const response = await changePassword(passwordForm.oldPassword, passwordForm.newPassword)
+      if (response.code === 200) {
+        ElMessage.success('密码修改成功')
+        // 重置表单
+        passwordForm.oldPassword = ''
+        passwordForm.newPassword = ''
+        passwordForm.confirmPassword = ''
+        formEl.resetFields()
+      }
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '密码修改失败')
+  }
+}
+
+// 快捷导航
 const goToMyCourses = () => {
   router.push('/my-courses')
 }
@@ -53,6 +159,11 @@ const goToStudyRecords = () => {
 const goToNotes = () => {
   router.push('/notes')
 }
+
+// 组件挂载时初始化
+onMounted(() => {
+  initFormData()
+})
 </script>
 
 <template>
@@ -67,8 +178,8 @@ const goToNotes = () => {
         <el-col :span="8">
           <div class="profile-card">
             <div class="avatar-section">
-              <div class="avatar-wrapper">
-                <el-avatar :size="100" :src="userStore.currentUser?.avatar" :icon="User" />
+              <div class="avatar-wrapper" @click="handleAvatarUpload">
+                <el-avatar :size="100" :src="currentAvatar" :icon="User" />
                 <div class="avatar-overlay">
                   <el-icon><Camera /></el-icon>
                 </div>
@@ -119,29 +230,29 @@ const goToNotes = () => {
             <el-tabs v-model="activeTab">
               <el-tab-pane label="个人信息" name="profile">
                 <el-form
-                  :model="form"
-                  :rules="rules"
+                  :model="profileForm"
+                  :rules="profileRules"
                   label-width="80px"
                   class="profile-form"
                 >
                   <el-form-item label="用户名">
-                    <el-input v-model="userStore.currentUser?.username" disabled />
+                    <el-input :model-value="userStore.currentUser?.username" disabled />
                   </el-form-item>
                   
                   <el-form-item label="昵称" prop="nickname">
-                    <el-input v-model="form.nickname" placeholder="请输入昵称" />
+                    <el-input v-model="profileForm.nickname" placeholder="请输入昵称" />
                   </el-form-item>
                   
                   <el-form-item label="邮箱" prop="email">
-                    <el-input v-model="form.email" placeholder="请输入邮箱" />
+                    <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
                   </el-form-item>
                   
                   <el-form-item label="手机号">
-                    <el-input v-model="form.phone" placeholder="请输入手机号" />
+                    <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
                   </el-form-item>
                   
                   <el-form-item label="性别">
-                    <el-radio-group v-model="form.gender">
+                    <el-radio-group v-model="profileForm.gender">
                       <el-radio :label="0">保密</el-radio>
                       <el-radio :label="1">男</el-radio>
                       <el-radio :label="2">女</el-radio>
@@ -150,7 +261,7 @@ const goToNotes = () => {
                   
                   <el-form-item label="生日">
                     <el-date-picker
-                      v-model="form.birthday"
+                      v-model="profileForm.birthday"
                       type="date"
                       placeholder="选择生日"
                       format="YYYY-MM-DD"
@@ -173,11 +284,16 @@ const goToNotes = () => {
               
               <el-tab-pane label="安全设置" name="security">
                 <div class="security-form">
-                  <el-form label-width="100px">
+                  <el-form 
+                    ref="passwordFormRef"
+                    :model="passwordForm" 
+                    :rules="passwordRules" 
+                    label-width="100px"
+                  >
                     <el-form-item label="登录密码">
                       <div class="password-item">
                         <span>已设置</span>
-                        <el-button type="primary" link @click="handleChangePassword">
+                        <el-button type="primary" link @click="activeTab = 'password'">
                           修改密码
                         </el-button>
                       </div>
@@ -185,7 +301,7 @@ const goToNotes = () => {
                     
                     <el-form-item label="绑定手机">
                       <div class="bind-item">
-                        <span v-if="form.phone">已绑定：{{ form.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') }}</span>
+                        <span v-if="profileForm.phone">已绑定：{{ profileForm.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') }}</span>
                         <span v-else style="color: #999;">未绑定</span>
                         <el-button type="primary" link>修改手机</el-button>
                       </div>
@@ -196,6 +312,56 @@ const goToNotes = () => {
                         <span>{{ userStore.currentUser?.email }}</span>
                         <el-button type="primary" link>修改邮箱</el-button>
                       </div>
+                    </el-form-item>
+                  </el-form>
+                </div>
+              </el-tab-pane>
+              
+              <el-tab-pane label="修改密码" name="password">
+                <div class="password-change-form">
+                  <el-form 
+                    ref="passwordFormRef"
+                    :model="passwordForm" 
+                    :rules="passwordRules" 
+                    label-width="100px"
+                    class="password-form"
+                  >
+                    <el-form-item label="原密码" prop="oldPassword">
+                      <el-input 
+                        v-model="passwordForm.oldPassword" 
+                        type="password" 
+                        placeholder="请输入原密码" 
+                        show-password
+                      />
+                    </el-form-item>
+                    
+                    <el-form-item label="新密码" prop="newPassword">
+                      <el-input 
+                        v-model="passwordForm.newPassword" 
+                        type="password" 
+                        placeholder="请输入新密码" 
+                        show-password
+                      />
+                    </el-form-item>
+                    
+                    <el-form-item label="确认密码" prop="confirmPassword">
+                      <el-input 
+                        v-model="passwordForm.confirmPassword" 
+                        type="password" 
+                        placeholder="请再次输入新密码" 
+                        show-password
+                      />
+                    </el-form-item>
+                    
+                    <el-form-item>
+                      <el-button 
+                        type="primary" 
+                        @click="handleChangePassword(passwordFormRef)"
+                      >
+                        <el-icon><Lock /></el-icon>
+                        修改密码
+                      </el-button>
+                      <el-button @click="activeTab = 'security'">取消</el-button>
                     </el-form-item>
                   </el-form>
                 </div>
@@ -253,6 +419,34 @@ const goToNotes = () => {
       </el-row>
     </div>
   </div>
+  
+  <!-- 头像预览对话框 -->
+  <el-dialog
+    v-model="avatarDialogVisible"
+    title="更换头像"
+    width="400px"
+    :close-on-click-modal="false"
+  >
+    <div class="avatar-preview">
+      <div class="preview-image">
+        <img :src="avatarPreview" alt="预览头像" />
+      </div>
+      <p class="preview-tip">确认使用这张图片作为头像吗？</p>
+    </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="avatarDialogVisible = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          :loading="avatarLoading"
+          @click="confirmAvatarChange"
+        >
+          <el-icon v-if="!avatarLoading"><Check /></el-icon>
+          {{ avatarLoading ? '上传中...' : '确定' }}
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped>
@@ -461,4 +655,46 @@ const goToNotes = () => {
   background: #f8f9fa;
   border-radius: 8px;
 }
-</style>
+
+.avatar-preview {
+  text-align: center;
+  padding: 20px;
+}
+
+.preview-image {
+  margin-bottom: 20px;
+}
+
+.preview-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #409eff;
+}
+
+.preview-tip {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+.password-change-form {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.password-form {
+  max-width: 400px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.security-form {
+  max-width: 500px;
+}</style>

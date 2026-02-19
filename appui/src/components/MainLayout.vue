@@ -15,6 +15,13 @@ import {
 const userStore = useUserStore()
 const router = useRouter()
 
+// 打开新窗口
+const openInNewWindow = (path: string) => {
+  const baseUrl = window.location.origin;
+  // 使用更安全的参数
+  window.open(`${baseUrl}${path}`, '_blank', 'noopener,noreferrer,width=1200,height=800');
+}
+
 // 侧边栏展开状态
 const isCollapse = ref(false)
 
@@ -192,7 +199,7 @@ const toggleCollapse = () => {
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="$router.push('/profile')">
+                <el-dropdown-item @click="openInNewWindow('/profile')">
                   <el-icon><User /></el-icon>个人中心
                 </el-dropdown-item>
                 <el-dropdown-item @click="$router.push('/change-password')">

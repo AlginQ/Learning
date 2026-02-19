@@ -22,3 +22,18 @@ export const getUserInfoApi = () => {
 export const logoutApi = () => {
   return request.post<ApiResponse<null>>('/auth/logout')
 }
+
+// 更新用户信息
+export const updateUserProfile = (data: any) => {
+  return request.put<ApiResponse<any>>('/auth/info', data)
+}
+
+// 更新用户头像
+export const updateUserAvatar = (avatarUrl: string) => {
+  return request.post<ApiResponse<null>>('/auth/avatar', { avatarUrl })
+}
+
+// 修改密码
+export const changePassword = (oldPassword: string, newPassword: string) => {
+  return request.post<ApiResponse<null>>('/auth/password', { oldPassword, newPassword })
+}

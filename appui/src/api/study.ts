@@ -1,17 +1,30 @@
 import request from '@/utils/request'
-import type { ApiResponse, ApiPageResponse } from '@/types/api'
-import type { PageRequest } from '@/types/course'
+import type { ApiResponse } from '@/types/api'
 
-// 记录学习进度
-export const recordProgressApi = (data: {
+// 添加学习记录
+export const addStudyRecord = (data: {
+  courseId: number
   lessonId: number
+  duration: number
   progress: number
-  watchDuration: number
 }) => {
-  return request.post<ApiResponse<any>>('/study/progress', data)
+  return request.post<ApiResponse<null>>('/study/record', data)
 }
 
-// 获取学习记录
-export const getStudyRecordsApi = (params: PageRequest) => {
-  return request.get<ApiPageResponse<any>>('/study/records', params)
+// 获取用户学习记录
+export const getUserStudyRecords = (params?: {
+  startDate?: string
+  endDate?: string
+}) => {
+  return request.get<ApiResponse<any[]>>('/study/records', { params })
+}
+
+// 获取用户学习统计
+export const getUserStudyStatistics = () => {
+  return request.get<ApiResponse<any>>('/study/statistics')
+}
+
+// 获取最近学习记录
+export const getRecentStudyRecords = (limit: number = 10) => {
+  return request.get<ApiResponse<any[]>>('/study/recent', { params: { limit } })
 }

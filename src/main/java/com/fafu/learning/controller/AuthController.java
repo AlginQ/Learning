@@ -165,4 +165,74 @@ public class AuthController {
         
         return user;
     }
+    
+    /**
+     * 更新用户信息
+     */
+    @PutMapping("/info")
+    public ApiResult<UserInfoVO> updateUserInfo(
+            HttpServletRequest request,
+            @Valid @RequestBody UserUpdateDTO updateDTO) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                if (userId != null) {
+                    UserInfoVO userInfo = userService.updateUserInfo(userId, updateDTO);
+                    return ApiResult.success("信息更新成功", userInfo);
+                }
+            }
+            return ApiResult.unauthorized("未授权");
+        } catch (Exception e) {
+            return ApiResult.badRequest(e.getMessage());
+        }
+    }
+    
+    /**
+     * 更新用户头像
+     */
+    @PostMapping("/avatar")
+    public ApiResult<Void> updateUserAvatar(
+            HttpServletRequest request,
+            @RequestParam("avatarUrl") String avatarUrl) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                if (userId != null) {
+                    userService.updateUserAvatar(userId, avatarUrl);
+                    return ApiResult.success("头像更新成功", null);
+                }
+            }
+            return ApiResult.unauthorized("未授权");
+        } catch (Exception e) {
+            return ApiResult.badRequest(e.getMessage());
+        }
+    }
+    
+    /**
+     * 修改密码
+     */
+    @PostMapping("/password")
+    public ApiResult<Void> updatePassword(
+            HttpServletRequest request,
+            @RequestParam("oldPassword") String oldPassword,
+            @RequestParam("newPassword") String newPassword) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                if (userId != null) {
+                    userService.updatePassword(userId, oldPassword, newPassword);
+                    return ApiResult.success("密码修改成功", null);
+                }
+            }
+            return ApiResult.unauthorized("未授权");
+        } catch (Exception e) {
+            return ApiResult.badRequest(e.getMessage());
+        }
+    }
 }

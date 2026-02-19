@@ -68,4 +68,19 @@ public interface UserService extends IService<User> {
      * 启用用户（管理员功能）
      */
     void enableUser(Long id);
+    
+    /**
+     * 更新用户信息
+     */
+    UserInfoVO updateUserInfo(Long userId, UserUpdateDTO updateDTO);
+    
+    /**
+     * 更新用户头像
+     */
+    void updateUserAvatar(Long userId, String avatarUrl);
+    
+    /**
+     * 更新用户密码
+     */
+    void updatePassword(Long userId, String oldPassword, String newPassword);
 }

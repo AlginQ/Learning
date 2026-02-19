@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import { getStudyRecordsApi } from '@/api/study'
+import { getUserStudyRecords } from '@/api/study'
 import { getCourseDetailApi } from '@/api/course'
 import type { Course } from '@/types/course'
 import { VideoPlay, Document, Clock, User } from '@element-plus/icons-vue'
@@ -23,7 +23,7 @@ const loadStudyRecords = async () => {
   
   loading.value = true
   try {
-    const response = await getStudyRecordsApi({ page: 1, size: 10 })
+    const response = await getUserStudyRecords()
     studyRecords.value = response.data.records
     
     // 计算统计信息

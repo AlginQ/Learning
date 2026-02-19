@@ -190,4 +190,79 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // user.setStatus(1);
         // updateById(user);
     }
+    
+    @Override
+    public UserInfoVO updateUserInfo(Long userId, UserUpdateDTO updateDTO) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 检查邮箱是否被其他用户使用
+        if (updateDTO.getEmail() != null && !updateDTO.getEmail().equals(user.getEmail())) {
+            User existingUser = getByEmail(updateDTO.getEmail());
+            if (existingUser != null && !existingUser.getId().equals(userId)) {
+                throw new RuntimeException("邮箱已被其他用户使用");
+            }
+            user.setEmail(updateDTO.getEmail());
+        }
+        
+        // 检查手机号是否被其他用户使用
+        if (updateDTO.getPhone() != null && !updateDTO.getPhone().equals(user.getPhone())) {
+            QueryWrapper<User> phoneQuery = new QueryWrapper<>();
+            phoneQuery.eq("phone", updateDTO.getPhone());
+            User existingUser = getOne(phoneQuery);
+            if (existingUser != null && !existingUser.getId().equals(userId)) {
+                throw new RuntimeException("手机号已被其他用户使用");
+            }
+            user.setPhone(updateDTO.getPhone());
+        }
+        
+        // 更新其他字段
+        if (updateDTO.getNickname() != null) {
+            user.setNickname(updateDTO.getNickname());
+        }
+        if (updateDTO.getGender() != null) {
+            user.setGender(updateDTO.getGender());
+        }
+        if (updateDTO.getBirthday() != null) {
+            user.setBirthday(updateDTO.getBirthday());
+        }
+        if (updateDTO.getAvatar() != null) {
+            user.setAvatar(updateDTO.getAvatar());
+        }
+        
+        updateById(user);
+        
+        UserInfoVO userInfoVO = new UserInfoVO();
+        BeanUtils.copyProperties(user, userInfoVO);
+        return userInfoVO;
+    }
+    
+    @Override
+    public void updateUserAvatar(Long userId, String avatarUrl) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setAvatar(avatarUrl);
+        updateById(user);
+    }
+    
+    @Override
+    public void updatePassword(Long userId, String oldPassword, String newPassword) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 验证旧密码
+        if (!PasswordUtil.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("原密码错误");
+        }
+        
+        // 更新密码
+        user.setPassword(PasswordUtil.encode(newPassword));
+        updateById(user);
+    }
 }

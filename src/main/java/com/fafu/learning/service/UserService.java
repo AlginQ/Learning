@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.fafu.learning.entity.User;
 import com.fafu.learning.dto.UserLoginDTO;
 import com.fafu.learning.dto.UserRegisterDTO;
+import com.fafu.learning.dto.UserUpdateDTO;
 import com.fafu.learning.vo.LoginResponseVO;
 import com.fafu.learning.vo.UserInfoVO;
 

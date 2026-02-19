@@ -7,6 +7,7 @@ import com.fafu.learning.mapper.UserMapper;
 import com.fafu.learning.service.UserService;
 import com.fafu.learning.dto.UserLoginDTO;
 import com.fafu.learning.dto.UserRegisterDTO;
+import com.fafu.learning.dto.UserUpdateDTO;
 import com.fafu.learning.vo.LoginResponseVO;
 import com.fafu.learning.vo.UserInfoVO;
 import com.fafu.learning.utils.JwtUtil;

@@ -10,6 +10,8 @@ import com.fafu.learning.utils.JwtUtil;
 import com.fafu.learning.utils.PasswordUtil;
 import com.fafu.learning.vo.LoginResponseVO;
 import com.fafu.learning.vo.UserInfoVO;
+import com.fafu.learning.dto.UserUpdateDTO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

@@ -8,12 +8,14 @@ const route = useRoute()
 
 // 判断当前路由是否需要使用主布局
 const needLayout = computed(() => {
-  const noLayoutRoutes = ['Login', 'Register','Home']
+  const noLayoutRoutes = ['Login', 'Register', 'Home', 'CourseDetailPage']
   
   // 管理员子路由需要使用主布局
   if (route.path.startsWith('/admin/')) {
     return true
   }
+  
+
   
   return !noLayoutRoutes.includes(route.name as string)
 })

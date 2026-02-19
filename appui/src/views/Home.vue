@@ -221,9 +221,13 @@ const fetchCourses = async () => {
   }
 }
 
-// 处理课程点击
+// 处理课程点击 - 在新窗口中打开课程详情页面
 const handleCourseClick = (courseId: number) => {
-  router.push(`/course/${courseId}`)
+  // 构造新窗口的URL (history模式)
+  const courseDetailUrl = `${window.location.origin}/course-detail/${courseId}`
+  
+  // 在新窗口中打开课程详情页面
+  window.open(courseDetailUrl, '_blank', 'noopener,noreferrer')
 }
 
 // 组件挂载时获取数据

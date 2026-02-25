@@ -24,19 +24,23 @@ const loadStudyRecords = async () => {
   loading.value = true
   try {
     const response = await getUserStudyRecords()
-    studyRecords.value = response.data.records
     
-    // 计算统计信息
-    stats.totalCourses = response.data.total
-    stats.totalHours = studyRecords.value.reduce((sum, record) => 
+    // 安全检查：确保 response 和 response.data 不为 undefined
+    const records = response?.data?.records || []
+    studyRecords.value = records
+    
+    // 计算统计信息（使用安全的 records 变量）
+    stats.totalCourses = response?.data?.total || 0
+    stats.totalHours = records.reduce((sum, record) => 
       sum + (record.studyTime || 0), 0) / 3600
-    stats.completedLessons = studyRecords.value.reduce((sum, record) => 
+    stats.completedLessons = records.reduce((sum, record) => 
       sum + (record.completedLessons || 0), 0)
-    stats.avgProgress = studyRecords.value.length > 0 
-      ? studyRecords.value.reduce((sum, record) => sum + record.totalProgress, 0) / studyRecords.value.length
+    stats.avgProgress = records.length > 0 
+      ? records.reduce((sum, record) => sum + record.totalProgress, 0) / records.length
       : 0
   } catch (error) {
     console.error('获取学习记录失败:', error)
+    studyRecords.value = []  // 出错时初始化为空数组
   } finally {
     loading.value = false
   }

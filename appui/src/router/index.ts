@@ -91,7 +91,12 @@ const routes: Array<RouteRecordRaw> = [
       }
     ]
   },
-  // 权限演示页面
+  {
+    path: '/courses',
+    name: 'Courses',
+    component: () => import('@/views/course/CourseList.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/permission-demo',
     name: 'PermissionDemo',

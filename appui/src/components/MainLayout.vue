@@ -46,27 +46,6 @@ const menuItems = computed(() => {
       icon: HomeFilled,
       path: '/',
       roles: ['USER', 'ADMIN'] // 所有用户可见
-    },
-    {
-      index: 'my-courses',
-      title: '我的课程',
-      icon: VideoPlay,
-      path: '/my-courses',
-      roles: ['USER', 'ADMIN'] // 所有用户可见
-    },
-    {
-      index: 'all-courses',
-      title: '课程',
-      icon: VideoPlay,
-      path: '/courses',
-      roles: ['USER', 'ADMIN'] // 所有用户可见
-    },
-    {
-      index: 'study-center',
-      title: '学习进度',
-      icon: DataAnalysis,
-      path: '/study',
-      roles: ['USER', 'ADMIN'] // 所有用户可见
     }
   ]
 

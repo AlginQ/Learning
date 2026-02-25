@@ -152,7 +152,7 @@ const fetchCourses = async () => {
         createTime: '2024-01-04'
       }
     ]
-    
+
     // 模拟获取最新课程
     newCourses.value = [
       {
@@ -184,7 +184,7 @@ const fetchCourses = async () => {
         createTime: '2024-01-06'
       }
     ]
-    
+
     // 模拟获取精选推荐
     featuredCourses.value = [
       {
@@ -225,7 +225,7 @@ const fetchCourses = async () => {
 const handleCourseClick = (courseId: number) => {
   // 构造新窗口的URL (history模式)
   const courseDetailUrl = `${window.location.origin}/course-detail/${courseId}`
-  
+
   // 在新窗口中打开课程详情页面
   window.open(courseDetailUrl, '_blank', 'noopener,noreferrer')
 }
@@ -244,15 +244,15 @@ onMounted(() => {
         <div class="logo">
           <h2>在线学习平台</h2>
         </div>
-        
+
         <div class="nav-menu">
           <el-menu
-            :default-active="activeIndex"
-            mode="horizontal"
-            @select="handleSelect"
-            background-color="#545c64"
-            text-color="#fff"
-            active-text-color="#ffd04b"
+              :default-active="activeIndex"
+              mode="horizontal"
+              @select="handleSelect"
+              background-color="#545c64"
+              text-color="#fff"
+              active-text-color="#ffd04b"
           >
             <el-menu-item index="1">首页</el-menu-item>
             <el-menu-item index="2">课程</el-menu-item>
@@ -261,19 +261,19 @@ onMounted(() => {
             <el-menu-item v-if="isAdmin && isCurrentUserAdmin" index="5">管理中心</el-menu-item>
           </el-menu>
         </div>
-        
+
         <div class="search-box">
           <el-input
-            v-model="searchKeyword"
-            placeholder="搜索课程..."
-            @keyup.enter="handleSearch"
+              v-model="searchKeyword"
+              placeholder="搜索课程..."
+              @keyup.enter="handleSearch"
           >
             <template #append>
               <el-button :icon="Search" @click="handleSearch" />
             </template>
           </el-input>
         </div>
-        
+
         <div class="user-actions">
           <template v-if="userStore.isLogin">
             <el-dropdown>
@@ -302,18 +302,18 @@ onMounted(() => {
         </div>
       </div>
     </el-header>
-    
+
     <!-- 主要内容区域 -->
     <el-main class="main-content">
       <!-- 轮播图区域 -->
       <div class="carousel-section">
-        <el-carousel 
-          height="400px" 
-          :autoplay="true" 
-          :interval="5000"
-          arrow="hover"
-          indicator-position="outside"
-          v-model:active-index="activeCarouselIndex"
+        <el-carousel
+            height="400px"
+            :autoplay="true"
+            :interval="5000"
+            arrow="hover"
+            indicator-position="outside"
+            v-model:active-index="activeCarouselIndex"
         >
           <el-carousel-item v-for="item in carouselItems" :key="item.id">
             <div class="carousel-item" :style="{ backgroundImage: `url(${item.image})` }">
@@ -326,7 +326,7 @@ onMounted(() => {
           </el-carousel-item>
         </el-carousel>
       </div>
-      
+
       <!-- 热门课程 -->
       <div class="course-section">
         <div class="section-header">
@@ -335,20 +335,20 @@ onMounted(() => {
           <el-button link type="primary" @click="$router.push('/courses')">更多 ></el-button>
         </div>
         <div class="course-grid">
-          <el-card 
-            v-for="course in hotCourses" 
-            :key="course.id" 
-            class="course-card"
-            shadow="hover"
-            @click="handleCourseClick(course.id)"
+          <el-card
+              v-for="course in hotCourses"
+              :key="course.id"
+              class="course-card"
+              shadow="hover"
+              @click="handleCourseClick(course.id)"
           >
             <template #header>
               <div class="card-header">
                 <img :src="course.coverImage" :alt="course.title" class="course-cover" />
-                <el-tag 
-                  :type="course.isFree ? 'success' : 'danger'" 
-                  size="small" 
-                  class="price-tag"
+                <el-tag
+                    :type="course.isFree ? 'success' : 'danger'"
+                    size="small"
+                    class="price-tag"
                 >
                   {{ course.isFree ? '免费' : `¥${course.price}` }}
                 </el-tag>
@@ -365,7 +365,7 @@ onMounted(() => {
           </el-card>
         </div>
       </div>
-      
+
       <!-- 最新上线 -->
       <div class="course-section">
         <div class="section-header">
@@ -374,20 +374,20 @@ onMounted(() => {
           <el-button link type="primary" @click="$router.push('/courses')">更多 ></el-button>
         </div>
         <div class="course-grid">
-          <el-card 
-            v-for="course in newCourses" 
-            :key="course.id" 
-            class="course-card"
-            shadow="hover"
-            @click="handleCourseClick(course.id)"
+          <el-card
+              v-for="course in newCourses"
+              :key="course.id"
+              class="course-card"
+              shadow="hover"
+              @click="handleCourseClick(course.id)"
           >
             <template #header>
               <div class="card-header">
                 <img :src="course.coverImage" :alt="course.title" class="course-cover" />
-                <el-tag 
-                  :type="course.isFree ? 'success' : 'danger'" 
-                  size="small" 
-                  class="price-tag"
+                <el-tag
+                    :type="course.isFree ? 'success' : 'danger'"
+                    size="small"
+                    class="price-tag"
                 >
                   {{ course.isFree ? '免费' : `¥${course.price}` }}
                 </el-tag>
@@ -404,7 +404,7 @@ onMounted(() => {
           </el-card>
         </div>
       </div>
-      
+
       <!-- 精选推荐 -->
       <div class="course-section">
         <div class="section-header">
@@ -413,20 +413,20 @@ onMounted(() => {
           <el-button link type="primary" @click="$router.push('/courses')">更多 ></el-button>
         </div>
         <div class="course-grid">
-          <el-card 
-            v-for="course in featuredCourses" 
-            :key="course.id" 
-            class="course-card"
-            shadow="hover"
-            @click="handleCourseClick(course.id)"
+          <el-card
+              v-for="course in featuredCourses"
+              :key="course.id"
+              class="course-card"
+              shadow="hover"
+              @click="handleCourseClick(course.id)"
           >
             <template #header>
               <div class="card-header">
                 <img :src="course.coverImage" :alt="course.title" class="course-cover" />
-                <el-tag 
-                  :type="course.isFree ? 'success' : 'danger'" 
-                  size="small" 
-                  class="price-tag"
+                <el-tag
+                    :type="course.isFree ? 'success' : 'danger'"
+                    size="small"
+                    class="price-tag"
                 >
                   {{ course.isFree ? '免费' : `¥${course.price}` }}
                 </el-tag>
@@ -443,10 +443,10 @@ onMounted(() => {
           </el-card>
         </div>
       </div>
-      
+
 
     </el-main>
-    
+
     <!-- 底部 -->
     <el-footer class="custom-footer">
 
@@ -756,43 +756,43 @@ onMounted(() => {
     flex-wrap: wrap;
     padding: 0 15px;
   }
-  
+
   .nav-menu {
     margin: 10px 0;
     width: 100%;
   }
-  
+
   .search-box {
     width: 100%;
     margin: 10px 0;
   }
-  
+
   .user-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .carousel-content h2 {
     font-size: 2rem;
   }
-  
+
   .carousel-content p {
     font-size: 1rem;
   }
-  
+
   .course-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .footer-wrapper {
     padding: 40px 20px 30px;
   }
-  
+
   .about-section {
     text-align: center;
   }
-  
+
   .about-section h3::after {
     left: 50%;
     transform: translateX(-50%);

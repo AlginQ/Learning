@@ -45,59 +45,8 @@
             <template #header>
               <div class="section-header">
                 <h3>课程播放</h3>
-                <div class="player-controls" v-if="currentLesson">
-                  <!-- 倍速播放 -->
-                  <el-dropdown @command="setPlaybackRate">
-                    <el-button size="small" type="primary" plain>
-                      {{ playbackRate }}x <el-icon><ArrowDown /></el-icon>
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="0.5">0.5x</el-dropdown-item>
-                        <el-dropdown-item command="1.0">1.0x</el-dropdown-item>
-                        <el-dropdown-item command="1.25">1.25x</el-dropdown-item>
-                        <el-dropdown-item command="1.5">1.5x</el-dropdown-item>
-                        <el-dropdown-item command="2.0">2.0x</el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                  
-                  <!-- 清晰度切换 -->
-                  <el-dropdown @command="setQuality">
-                    <el-button size="small" type="primary" plain>
-                      {{ quality }} <el-icon><ArrowDown /></el-icon>
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="标清">标清</el-dropdown-item>
-                        <el-dropdown-item command="高清">高清</el-dropdown-item>
-                        <el-dropdown-item command="超清">超清</el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                  
-                  <!-- 全屏/画中画 -->
-                  <el-button-group>
-                    <el-button size="small" @click="toggleFullscreen">
-                      <el-icon><FullScreen /></el-icon>
-                    </el-button>
-                    <el-button size="small" @click="togglePictureInPicture">
-                      <el-icon><Picture /></el-icon>
-                    </el-button>
-                  </el-button-group>
-                  
-                  <!-- 收藏/分享 -->
-                  <el-button-group>
-                    <el-button size="small" @click="toggleFavorite" :type="isFavorite ? 'danger' : 'default'">
-                      <el-icon><Star /></el-icon>
-                      {{ isFavorite ? '已收藏' : '收藏' }}
-                    </el-button>
-                    <el-button size="small" @click="shareCourse">
-                      <el-icon><Share /></el-icon>
-                      分享
-                    </el-button>
-                  </el-button-group>
-                </div>
+                <!-- 移除顶部控制栏，保留空div -->
+                <div></div>
               </div>
             </template>
             
@@ -112,38 +61,118 @@
                   <p>时长: {{ formatDuration(currentLesson.duration) }} | 进度: {{ currentProgress }}%</p>
                 </div>
                 <div class="video-container">
-                  <!-- 视频播放器占位符 -->
-                  <div 
-                    class="video-player-placeholder" 
-                    ref="videoPlayer"
-                    tabindex="0"
-                    @keydown="handleKeyDown"
-                  >
-                    <div class="playback-overlay" v-if="showOverlay">
-                      <el-icon size="60" color="#fff">{{ isPlaying ? VideoPause : VideoPlay }}</el-icon>
-                    </div>
-                    <el-icon size="80" color="#409eff"><VideoPlay /></el-icon>
-                    <p>视频播放区域</p>
-                    <div class="video-controls">
-                      <el-slider 
-                        v-model="currentTime" 
-                        :max="currentLesson.duration" 
-                        :format-tooltip="formatSliderTime"
-                        @change="seekVideo"
-                      />
-                      <div class="control-buttons">
-                        <el-button circle @click="togglePlay">
-                          <el-icon>{{ isPlaying ? VideoPause : VideoPlay }}</el-icon>
-                        </el-button>
-                        <el-button circle @click="seek(-10)">
-                          <el-icon><CaretLeft /></el-icon>
-                        </el-button>
-                        <el-button circle @click="seek(10)">
-                          <el-icon><CaretRight /></el-icon>
-                        </el-button>
-                        <span class="time-display">
-                          {{ formatDuration(currentTime) }} / {{ formatDuration(currentLesson.duration) }}
-                        </span>
+                  <!-- B站风格视频播放器 -->
+                  <div class="bilibili-player" ref="videoPlayer" tabindex="0" @keydown="handleKeyDown">
+                    <!-- 视频播放区域 -->
+                    <div class="video-area">
+                      <div class="video-placeholder" v-if="!currentLesson">
+                        <el-icon size="60" color="#999"><VideoPlay /></el-icon>
+                        <p>请选择章节开始学习</p>
+                      </div>
+                      <div class="video-content" v-else>
+                        <!-- 视频播放器主体 -->
+                        <div class="player-main">
+                          <div class="player-video">
+                            <!-- 实际视频元素 -->
+                            <video 
+                              ref="videoElement" 
+                              :src="currentLesson.videoUrl" 
+                              class="video-element"
+                              @play="isPlaying = true"
+                              @pause="isPlaying = false"
+                              @timeupdate="updateTime"
+                              @ended="handleEnded"
+                            ></video>
+                            
+                            <!-- 播放按钮覆盖层 -->
+                            <div class="play-overlay" v-if="!isPlaying">
+                              <el-button circle size="large" type="primary" @click="togglePlay">
+                                <el-icon size="32">
+                                  <component :is="isPlaying ? VideoPause : VideoPlay" />
+                                </el-icon>
+                              </el-button>
+                            </div>
+                            
+                            <!-- 视频标题覆盖层 -->
+                            <div class="video-title-overlay">
+                              <h4>{{ currentLesson.title }}</h4>
+                            </div>
+                            
+                            <!-- 底部控制栏 -->
+                            <div class="video-controls-bottom">
+                              <div class="progress-bar">
+                                <el-slider 
+                                  v-model="currentTime" 
+                                  :max="currentLesson.duration" 
+                                  :format-tooltip="formatSliderTime"
+                                  @change="seekVideo"
+                                  style="width: 100%"
+                                />
+                              </div>
+                              <div class="control-row">
+                                <div class="left-controls">
+                                  <el-button circle size="small" @click="togglePlay">
+                                    <el-icon>
+                                      <component :is="isPlaying ? VideoPause : VideoPlay" />
+                                    </el-icon>
+                                  </el-button>
+                                  <span class="time-display">
+                                    {{ formatDuration(currentTime) }} / {{ formatDuration(currentLesson.duration) }}
+                                  </span>
+                                </div>
+                                              
+                                <div class="center-controls">
+                                  <el-dropdown trigger="click" @command="setQuality">
+                                    <el-button size="small" plain>
+                                      {{ quality }}
+                                    </el-button>
+                                    <template #dropdown>
+                                      <el-dropdown-menu>
+                                        <el-dropdown-item command="超清">超清</el-dropdown-item>
+                                        <el-dropdown-item command="高清">高清</el-dropdown-item>
+                                        <el-dropdown-item command="标清">标清</el-dropdown-item>
+                                      </el-dropdown-menu>
+                                    </template>
+                                  </el-dropdown>
+                                  
+                                  <el-dropdown trigger="click" @command="setPlaybackRate">
+                                    <el-button size="small" plain>
+                                      倍速
+                                    </el-button>
+                                    <template #dropdown>
+                                      <el-dropdown-menu>
+                                        <el-dropdown-item command="0.5">0.5x</el-dropdown-item>
+                                        <el-dropdown-item command="0.75">0.75x</el-dropdown-item>
+                                        <el-dropdown-item command="1.0">1.0x</el-dropdown-item>
+                                        <el-dropdown-item command="1.25">1.25x</el-dropdown-item>
+                                        <el-dropdown-item command="1.5">1.5x</el-dropdown-item>
+                                        <el-dropdown-item command="2.0">2.0x</el-dropdown-item>
+                                      </el-dropdown-menu>
+                                    </template>
+                                  </el-dropdown>
+                                  
+                                  <el-button size="small" plain>
+                                    <el-icon><Message /></el-icon>
+                                    字幕
+                                  </el-button>
+                                  
+                                  <el-button size="small" plain>
+                                    <el-icon><ChatDotRound /></el-icon>
+                                  </el-button>
+                                </div>
+                                              
+                                <div class="right-controls">
+                                  <el-button size="small" plain>
+                                    <el-icon><Setting /></el-icon>
+                                  </el-button>
+                                  <el-button size="small" plain @click="toggleFullscreen">
+                                    <el-icon><FullScreen /></el-icon>
+                                  </el-button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -354,7 +383,8 @@ import {
   CircleCheck,
   CircleClose,
   Message,
-  ChatDotRound
+  ChatDotRound,
+  Setting
 } from '@element-plus/icons-vue'
 import type { Course, Chapter, Lesson } from '@/types/course'
 
@@ -374,6 +404,7 @@ const playbackRate = ref('1.0')
 const quality = ref('高清')
 const showOverlay = ref(false)
 const videoPlayer = ref<HTMLDivElement | null>(null)
+const videoElement = ref<HTMLVideoElement | null>(null)
 
 // 学习进度
 const currentProgress = ref(0)
@@ -424,7 +455,7 @@ const mockChapters: Chapter[] = [
       {
         id: 1,
         title: 'Vue 3 简介与环境搭建',
-        videoUrl: '',
+        videoUrl: '/videos/Vue3极简2025版教程.mp4',
         duration: 930,
         lessonNumber: 1,
         isFree: true
@@ -432,7 +463,7 @@ const mockChapters: Chapter[] = [
       {
         id: 2,
         title: 'Vue 3 响应式系统原理',
-        videoUrl: '',
+        videoUrl: '/videos/Vue3极简2025版教程.mp4',
         duration: 1335,
         lessonNumber: 2,
         isFree: true
@@ -440,7 +471,7 @@ const mockChapters: Chapter[] = [
       {
         id: 3,
         title: '模板语法与指令',
-        videoUrl: '',
+        videoUrl: '/videos/Vue3极简2025版教程.mp4',
         duration: 1520,
         lessonNumber: 3,
         isFree: false
@@ -455,7 +486,7 @@ const mockChapters: Chapter[] = [
       {
         id: 4,
         title: '组件基础概念',
-        videoUrl: '',
+        videoUrl: '/videos/Vue3极简2025版教程.mp4',
         duration: 1125,
         lessonNumber: 1,
         isFree: false
@@ -463,7 +494,7 @@ const mockChapters: Chapter[] = [
       {
         id: 5,
         title: '组件通信方式',
-        videoUrl: '',
+        videoUrl: '/videos/Vue3极简2025版教程.mp4',
         duration: 1800,
         lessonNumber: 2,
         isFree: false
@@ -510,8 +541,27 @@ const relatedCourses = ref([
 
 // 播放器控制函数
 const togglePlay = () => {
-  isPlaying.value = !isPlaying.value
-  ElMessage.info(isPlaying.value ? '开始播放' : '暂停播放')
+  if (videoElement.value) {
+    if (isPlaying.value) {
+      videoElement.value.pause()
+    } else {
+      videoElement.value.play()
+    }
+    isPlaying.value = !isPlaying.value
+    ElMessage.info(isPlaying.value ? '开始播放' : '暂停播放')
+  }
+}
+
+const updateTime = () => {
+  if (videoElement.value && currentLesson.value) {
+    currentTime.value = videoElement.value.currentTime
+    currentProgress.value = Math.round((currentTime.value / currentLesson.value.duration) * 100)
+  }
+}
+
+const handleEnded = () => {
+  isPlaying.value = false
+  ElMessage.info('视频播放结束')
 }
 
 const seek = (seconds: number) => {
@@ -520,12 +570,19 @@ const seek = (seconds: number) => {
 }
 
 const seekVideo = (value: number) => {
-  currentTime.value = value
-  ElMessage.info(`跳转到 ${formatDuration(value)}`)
+  const roundedValue = Math.round(value) // 不保留小数
+  if (videoElement.value) {
+    videoElement.value.currentTime = roundedValue
+  }
+  currentTime.value = roundedValue
+  ElMessage.info(`跳转到 ${formatDuration(roundedValue)}`)
 }
 
 const setPlaybackRate = (rate: string) => {
   playbackRate.value = rate
+  if (videoElement.value) {
+    videoElement.value.playbackRate = parseFloat(rate)
+  }
   ElMessage.info(`已设置播放速度为 ${rate}x`)
 }
 
@@ -542,6 +599,52 @@ const toggleFullscreen = () => {
   }
   ElMessage.info('切换全屏模式')
 }
+
+// 监听全屏状态变化
+const handleFullscreenChange = () => {
+  const isFullscreen = !!document.fullscreenElement
+  if (isFullscreen) {
+    // 全屏时确保控制栏可见
+    const controls = videoPlayer.value?.querySelector('.video-controls-bottom')
+    if (controls) {
+      controls.style.display = 'block'
+    }
+  }
+}
+
+// 添加全屏变化监听器
+onMounted(() => {
+  // 模拟 API 调用
+  setTimeout(() => {
+    course.value = mockCourse
+    chapters.value = mockChapters
+    if (mockChapters.length > 0) {
+      activeChapter.value = mockChapters[0].id
+      // 默认选择第一个免费课程
+      const firstFreeLesson = mockChapters[0].lessons.find(lesson => lesson.isFree)
+      if (firstFreeLesson) {
+        currentLesson.value = firstFreeLesson
+      }
+    }
+    startProgressTimer()
+  }, 1000)
+  
+  // 添加全局键盘监听
+  window.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      return // 如果焦点在输入框内，不处理快捷键
+    }
+    handleKeyDown(e)
+  })
+  
+  // 添加全屏变化监听器
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
+})
+
+onUnmounted(() => {
+  stopProgressTimer()
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
+})
 
 const togglePictureInPicture = () => {
   ElMessage.info('切换画中画模式')
@@ -640,7 +743,7 @@ const goToCourse = (courseId: number) => {
 // 格式化函数
 const formatDuration = (seconds: number) => {
   const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
+  const remainingSeconds = Math.round(seconds % 60) // 不保留小数
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
@@ -801,7 +904,7 @@ onUnmounted(() => {
 
 .course-content-area {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 3fr 1fr;
   gap: 20px;
   min-height: 750px;
 }
@@ -834,71 +937,478 @@ onUnmounted(() => {
   min-width: 150px;
 }
 
-.video-player {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.video-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.video-container {
+.bilibili-player {
+  width: 100%;
   position: relative;
-  height: 60vh;
-  max-height: 600px;
   background: #000;
   border-radius: 8px;
   overflow: hidden;
+  aspect-ratio: 16/9;
+  min-width: 600px;
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: 450px;
 }
 
-.video-player-placeholder {
+.video-area {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.video-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #000;
-  color: white;
-  border-radius: 8px;
+  color: #999;
+  text-align: center;
+  padding: 20px;
 }
 
-.playback-overlay {
+.video-placeholder p {
+  margin-top: 20px;
+  font-size: 16px;
+}
+
+.player-main {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.player-video {
+  flex: 1;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+}
+
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+
+/* 视频标题覆盖层 */
+.video-title-overlay {
   position: absolute;
-  top: 0;
+  bottom: 80px;
+  left: 15px;
+  color: white;
+  z-index: 5;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.video-title-overlay h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* 底部控制栏 */
+.video-controls-bottom {
+  position: absolute;
+  bottom: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  z-index: 9999;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  transform: translateY(100%);
+}
+
+.progress-bar {
+  width: 100%;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.player-video:hover .video-controls-bottom {
+  transform: translateY(0);
+}
+
+/* 全屏模式下的控制栏 */
+:-webkit-full-screen .video-controls-bottom,
+:-moz-full-screen .video-controls-bottom,
+:-ms-fullscreen .video-controls-bottom,
+:fullscreen .video-controls-bottom {
+  width: 100% !important;
+  padding: 15px 20px !important;
+  min-height: 130px !important;
+  bottom: 0 !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 9999 !important;
+  transform: translateY(0) !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+:-webkit-full-screen .progress-bar,
+:-moz-full-screen .progress-bar,
+:-ms-fullscreen .progress-bar,
+:fullscreen .progress-bar {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 10px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+:-webkit-full-screen .control-row,
+:-moz-full-screen .control-row,
+:-ms-fullscreen .control-row,
+:fullscreen .control-row {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  flex-wrap: wrap !important;
+  gap: 15px !important;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex: 1 !important;
+}
+
+/* 全屏模式下的播放器容器 */
+:-webkit-full-screen .bilibili-player,
+:-moz-full-screen .bilibili-player,
+:-ms-fullscreen .bilibili-player,
+:fullscreen .bilibili-player {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* 全屏模式下的视频元素 */
+:-webkit-full-screen .video-element,
+:-moz-full-screen .video-element,
+:-ms-fullscreen .video-element,
+:fullscreen .video-element {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* 全屏模式下的左右控制栏 */
+:-webkit-full-screen .left-controls,
+:-moz-full-screen .left-controls,
+:-ms-fullscreen .left-controls,
+:fullscreen .left-controls {
+  flex-shrink: 1 !important;
+  min-width: 200px !important;
+}
+
+:-webkit-full-screen .right-controls,
+:-moz-full-screen .right-controls,
+:-ms-fullscreen .right-controls,
+:fullscreen .right-controls {
+  flex-shrink: 1 !important;
+  min-width: 150px !important;
+}
+
+/* 全屏模式下的进度条 */
+:-webkit-full-screen .progress-bar,
+:-moz-full-screen .progress-bar,
+:-ms-fullscreen .progress-bar,
+:fullscreen .progress-bar {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 15px !important;
+}
+
+/* 全屏模式下的播放器容器 */
+:-webkit-full-screen .bilibili-player,
+:-moz-full-screen .bilibili-player,
+:-ms-fullscreen .bilibili-player,
+:fullscreen .bilibili-player {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  min-width: 100vw;
+  min-height: 100vh;
+  border-radius: 0;
+  margin: 0;
+}
+
+/* 全屏模式下的视频元素 */
+:-webkit-full-screen .video-element,
+:-moz-full-screen .video-element,
+:-ms-fullscreen .video-element,
+:fullscreen .video-element {
+  width: 100%;
+  height: 100%;
+}
+
+.progress-bar {
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.control-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.video-controls {
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: nowrap;
   width: 100%;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.8);
+  flex: 1;
 }
 
-.control-buttons {
+.left-controls {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+.center-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  justify-content: center;
+  min-width: 300px;
+}
+
+.right-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .control-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .center-controls {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    min-width: unset;
+  }
+  
+  .left-controls,
+  .right-controls {
+    flex: 1;
+  }
+  
+  .right-controls {
+    justify-content: flex-end;
+  }
 }
 
 .time-display {
-  margin-left: auto;
   color: white;
   font-size: 14px;
+  margin-left: 10px;
+}
+
+/* 播放按钮覆盖层 */
+.play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  transition: all 0.3s ease;
+}
+
+.play-overlay .el-button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: transparent !important;
+  width: 80px !important;
+  height: 80px !important;
+  min-width: 80px !important;
+  min-height: 80px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.play-overlay .el-button:hover {
+  background: rgba(255, 255, 255, 1) !important;
+  transform: scale(1.1);
+}
+
+/* 控制按钮样式 */
+.control-row .el-button {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease !important;
+}
+
+.control-row .el-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 播放按钮样式 */
+.left-controls .el-button {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 进度条样式 */
+.progress-bar .el-slider__bar {
+  background-color: #409eff !important;
+  height: 6px !important;
+}
+
+.progress-bar .el-slider__button {
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid #409eff !important;
+  background-color: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.progress-bar .el-slider__runway {
+  height: 6px !important;
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+/* 下拉菜单样式 */
+.el-dropdown-menu {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.el-dropdown-item {
+  color: white !important;
+}
+
+.el-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* B站风格播放按钮 */
+.el-button--circle {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+}
+
+.el-button--large {
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  min-height: 60px !important;
+}
+
+/* 播放按钮样式 */
+.play-overlay .el-button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: transparent !important;
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  min-height: 60px !important;
+}
+
+.play-overlay .el-button:hover {
+  background: rgba(255, 255, 255, 1) !important;
+}
+
+/* 顶部控制栏样式 */
+.player-controls-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 20;
+}
+
+.player-controls-top .el-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 4px;
+}
+
+.player-controls-top .el-button--primary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+.player-controls-top .el-button--primary:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.player-controls-top .el-button--default {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.player-controls-top .el-button--default:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .control-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .right-controls {
+    margin-left: auto;
+  }
 }
 
 .note-section {

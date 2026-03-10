@@ -453,7 +453,7 @@ onMounted(() => {
       <div class="footer-wrapper">
 
         <div class="footer-bottom">
-          <p>© 2026 在线学习平台. All rights reserved. | 京ICP备xxxxxx号</p>
+          <p>© 2026 在线学习平台. All rights reserved. </p>
         </div>
       </div>
     </el-footer>

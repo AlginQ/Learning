@@ -18,10 +18,10 @@ INSERT INTO `category` (`id`, `name`, `icon`, `sort_order`) VALUES
  (3, '移动开发', 'https://example.com/mobile.svg', 3),
 (4, '数据库', 'https://example.com/database.svg', 4);
 
-INSERT INTO `course` (`id`, `category_id`, `teacher_id`, `title`, `introduction`, `cover_image`, `price`, `discount_price`, `lesson_count`, `student_count`)
-VALUES (1, 1, 1, 'Vue 3从入门到实战', '全面学习Vue 3最新特性，掌握现代前端开发技能', 'https://example.com/vue3.jpg', 0, 0, 20, 0),
-       (2, 1, 2, 'React Hooks完全指南', '深入学习React Hooks，提升函数式组件开发能力', 'https://example.com/react.jpg', 0, 0, 15, 0),
-       (3, 2, 3, 'Spring Boot企业级开发', '掌握Spring Boot核心技能，构建企业级应用', 'https://example.com/springboot.jpg', 0, 0, 25, 0);
+INSERT INTO `course` (`id`, `category_id`, `teacher_id`, `title`, `introduction`, `cover_image`, `price`, `discount_price`, `lesson_count`, `student_count`, `rating`)
+VALUES (1, 1, 1, 'Vue 3从入门到实战', '全面学习Vue 3最新特性，掌握现代前端开发技能', 'https://example.com/vue3.jpg', 0, 0, 20, 0, 4.8),
+       (2, 1, 2, 'React Hooks完全指南', '深入学习React Hooks，提升函数式组件开发能力', 'https://example.com/react.jpg', 0, 0, 15, 0, 4.6),
+       (3, 2, 3, 'Spring Boot企业级开发', '掌握Spring Boot核心技能，构建企业级应用', 'https://example.com/springboot.jpg', 0, 0, 25, 0, 4.7);
 
 INSERT INTO `chapter` (`id`, `course_id`,`title`,`chapter_number`,`description`,`create_time`,`update_time`)
 VALUES

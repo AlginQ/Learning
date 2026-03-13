@@ -35,6 +35,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/course/play/:id',
+    name: 'CoursePlay',
+    component: () => import('@/views/course/CoursePlay.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/study',
     name: 'StudyCenter',
     component: () => import('@/views/study/StudyCenter.vue'),

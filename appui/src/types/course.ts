@@ -19,15 +19,20 @@ export interface Course {
   title: string
   description?: string
   coverImage?: string
+  cover_image?: string
   price: number
   discountPrice?: number
-  isFree: boolean
-  category: Category
-  teacher: Teacher
+  isFree?: boolean
+  category?: Category
+  categoryId?: number
+  teacher?: Teacher
+  teacherId?: number
   lessonCount: number
   studentCount: number
   rating: number
-  createTime: string
+  createTime?: string
+  duration?: number
+  commentCount?: number
 }
 
 export interface CourseDetail extends Course {

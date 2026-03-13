@@ -422,86 +422,747 @@ const noteContent = ref('')
 const newComment = ref('')
 const replyContent = ref('')
 
-// 模拟数据
-const mockCourse: Course = {
-  id: 1,
-  title: 'Vue 3 入门教程',
-  description: '从零开始学习 Vue 3，掌握现代前端开发核心技术。本课程涵盖Vue 3的基础概念、响应式系统、组件开发、状态管理等核心内容，适合前端开发初学者。',
-  coverImage: '',
-  price: 0,
-  category: {
-    id: 1,
-    name: '前端开发'
-  },
-  teacher: {
-    id: 1,
-    name: '张老师',
-    avatar: '',
-    title: '高级前端工程师',
-    introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
-  },
-  lessonCount: 20,
-  studentCount: 1234,
-  rating: 4.8,
-  createTime: new Date().toISOString()
-}
-
-const mockChapters: Chapter[] = [
+// 模拟数据 - 多个课程
+const mockCourses: Course[] = [
   {
     id: 1,
-    title: 'Vue 3 基础入门',
-    chapterNumber: 1,
-    lessons: [
-      {
-        id: 1,
-        title: 'Vue 3 简介与环境搭建',
-        videoUrl: '/videos/Vue3极简2025版教程.mp4',
-        duration: 930,
-        lessonNumber: 1,
-        isFree: true
-      },
-      {
-        id: 2,
-        title: 'Vue 3 响应式系统原理',
-        videoUrl: '/videos/Vue3极简2025版教程.mp4',
-        duration: 1335,
-        lessonNumber: 2,
-        isFree: true
-      },
-      {
-        id: 3,
-        title: '模板语法与指令',
-        videoUrl: '/videos/Vue3极简2025版教程.mp4',
-        duration: 1520,
-        lessonNumber: 3,
-        isFree: false
-      }
-    ]
+    title: 'Vue 3 入门教程',
+    description: '从零开始学习 Vue 3，掌握现代前端开发核心技术。本课程涵盖Vue 3的基础概念、响应式系统、组件开发、状态管理等核心内容，适合前端开发初学者。',
+    coverImage: 'https://picsum.photos/400/225?random=1',
+    price: 0,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 20,
+    studentCount: 1234,
+    rating: 4.8,
+    createTime: new Date().toISOString()
   },
   {
     id: 2,
-    title: '组件开发进阶',
-    chapterNumber: 2,
-    lessons: [
-      {
-        id: 4,
-        title: '组件基础概念',
-        videoUrl: '/videos/Vue3极简2025版教程.mp4',
-        duration: 1125,
-        lessonNumber: 1,
-        isFree: false
-      },
-      {
-        id: 5,
-        title: '组件通信方式',
-        videoUrl: '/videos/Vue3极简2025版教程.mp4',
-        duration: 1800,
-        lessonNumber: 2,
-        isFree: false
-      }
-    ]
+    title: 'Spring Boot 企业级开发',
+    description: '深入学习Spring Boot企业级开发技术，掌握微服务架构设计与实现，适合后端开发工程师。',
+    coverImage: 'https://picsum.photos/400/225?random=2',
+    price: 199,
+    category: {
+      id: 2,
+      name: '后端开发'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 25,
+    studentCount: 2345,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 3,
+    title: 'React Hooks 完全指南',
+    description: '全面学习React Hooks，掌握函数式组件开发，提升前端开发效率。',
+    coverImage: 'https://picsum.photos/400/225?random=3',
+    price: 149,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 18,
+    studentCount: 1876,
+    rating: 4.9,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 4,
+    title: 'JavaScript 高级编程',
+    description: '深入学习JavaScript高级特性，包括闭包、原型链、异步编程等核心概念。',
+    coverImage: 'https://picsum.photos/400/225?random=4',
+    price: 129,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 22,
+    studentCount: 4567,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 5,
+    title: 'TypeScript 入门到精通',
+    description: '学习TypeScript类型系统和最佳实践，提升代码质量和开发效率。',
+    coverImage: 'https://picsum.photos/400/225?random=5',
+    price: 149,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 20,
+    studentCount: 2345,
+    rating: 4.8,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 6,
+    title: 'HTML5与CSS3实战',
+    description: '学习HTML5与CSS3高级特性，构建现代化网页。',
+    coverImage: 'https://picsum.photos/400/225?random=6',
+    price: 99,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 15,
+    studentCount: 4567,
+    rating: 4.6,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 7,
+    title: '前端性能优化',
+    description: '学习前端性能优化技巧，提升网站加载速度和用户体验。',
+    coverImage: 'https://picsum.photos/400/225?random=7',
+    price: 179,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 18,
+    studentCount: 1234,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 8,
+    title: 'Vue 3 组件库开发',
+    description: '学习如何开发自己的Vue 3组件库，提升组件化开发能力。',
+    coverImage: 'https://picsum.photos/400/225?random=8',
+    price: 199,
+    category: {
+      id: 1,
+      name: '前端开发'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 25,
+    studentCount: 1890,
+    rating: 4.8,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 9,
+    title: 'Spring Cloud 微服务架构',
+    description: '学习Spring Cloud微服务架构设计与实现，掌握分布式系统开发技术。',
+    coverImage: 'https://picsum.photos/400/225?random=9',
+    price: 299,
+    category: {
+      id: 2,
+      name: '后端开发'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 35,
+    studentCount: 2345,
+    rating: 4.8,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 10,
+    title: 'Node.js 后端开发',
+    description: '学习Node.js后端开发技术，构建高性能服务。',
+    coverImage: 'https://picsum.photos/400/225?random=10',
+    price: 169,
+    category: {
+      id: 2,
+      name: '后端开发'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 24,
+    studentCount: 2789,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 11,
+    title: 'Python 后端开发',
+    description: '学习Python后端开发框架，如Django和Flask。',
+    coverImage: 'https://picsum.photos/400/225?random=11',
+    price: 159,
+    category: {
+      id: 2,
+      name: '后端开发'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 22,
+    studentCount: 3456,
+    rating: 4.6,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 12,
+    title: 'Go 语言实战',
+    description: '学习Go语言的核心特性和实战应用。',
+    coverImage: 'https://picsum.photos/400/225?random=12',
+    price: 189,
+    category: {
+      id: 2,
+      name: '后端开发'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 20,
+    studentCount: 1987,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 13,
+    title: '微服务架构设计',
+    description: '学习微服务架构的设计原则和最佳实践。',
+    coverImage: 'https://picsum.photos/400/225?random=13',
+    price: 249,
+    category: {
+      id: 2,
+      name: '后端开发'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目架构设计。'
+    },
+    lessonCount: 28,
+    studentCount: 1654,
+    rating: 4.8,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 14,
+    title: 'Flutter 跨平台开发',
+    description: '学习Flutter跨平台应用开发，一次编写多端运行。',
+    coverImage: 'https://picsum.photos/400/225?random=14',
+    price: 249,
+    category: {
+      id: 3,
+      name: '移动开发'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 30,
+    studentCount: 2789,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 15,
+    title: 'React Native 开发',
+    description: '学习React Native移动应用开发。',
+    coverImage: 'https://picsum.photos/400/225?random=15',
+    price: 229,
+    category: {
+      id: 3,
+      name: '移动开发'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 28,
+    studentCount: 2345,
+    rating: 4.6,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 16,
+    title: 'iOS 开发基础',
+    description: '学习iOS应用开发的基础知识和技能。',
+    coverImage: 'https://picsum.photos/400/225?random=16',
+    price: 199,
+    category: {
+      id: 3,
+      name: '移动开发'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 25,
+    studentCount: 1890,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 17,
+    title: 'Android 开发入门',
+    description: '学习Android应用开发的入门知识。',
+    coverImage: 'https://picsum.photos/400/225?random=17',
+    price: 189,
+    category: {
+      id: 3,
+      name: '移动开发'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 22,
+    studentCount: 2134,
+    rating: 4.6,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 18,
+    title: '移动应用UI设计',
+    description: '学习移动应用的UI设计原则和实践。',
+    coverImage: 'https://picsum.photos/400/225?random=18',
+    price: 159,
+    category: {
+      id: 3,
+      name: '移动开发'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 18,
+    studentCount: 1654,
+    rating: 4.8,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 19,
+    title: 'MySQL 数据库优化',
+    description: '学习MySQL数据库性能优化技巧。',
+    coverImage: 'https://picsum.photos/400/225?random=19',
+    price: 149,
+    category: {
+      id: 4,
+      name: '数据库'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 18,
+    studentCount: 1987,
+    rating: 4.9,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 20,
+    title: 'PostgreSQL 高级特性',
+    description: '学习PostgreSQL数据库的高级特性和应用。',
+    coverImage: 'https://picsum.photos/400/225?random=20',
+    price: 169,
+    category: {
+      id: 4,
+      name: '数据库'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 20,
+    studentCount: 1234,
+    rating: 4.7,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 21,
+    title: 'MongoDB 实战',
+    description: '学习MongoDB非关系型数据库的应用。',
+    coverImage: 'https://picsum.photos/400/225?random=21',
+    price: 159,
+    category: {
+      id: 4,
+      name: '数据库'
+    },
+    teacher: {
+      id: 3,
+      name: '王老师',
+      avatar: '',
+      title: '前端架构师',
+      introduction: '拥有7年前端开发经验，专注React技术栈，曾参与多个大型单页应用开发。'
+    },
+    lessonCount: 19,
+    studentCount: 1567,
+    rating: 4.6,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 22,
+    title: '数据库设计与建模',
+    description: '学习数据库设计的原则和建模技巧。',
+    coverImage: 'https://picsum.photos/400/225?random=22',
+    price: 179,
+    category: {
+      id: 4,
+      name: '数据库'
+    },
+    teacher: {
+      id: 1,
+      name: '张老师',
+      avatar: '',
+      title: '高级前端工程师',
+      introduction: '拥有8年前端开发经验，专注Vue生态技术栈，曾参与多个大型企业级项目开发。'
+    },
+    lessonCount: 22,
+    studentCount: 1345,
+    rating: 4.8,
+    createTime: new Date().toISOString()
+  },
+  {
+    id: 23,
+    title: 'Redis 缓存技术',
+    description: '学习Redis缓存技术的应用和最佳实践。',
+    coverImage: 'https://picsum.photos/400/225?random=23',
+    price: 149,
+    category: {
+      id: 4,
+      name: '数据库'
+    },
+    teacher: {
+      id: 2,
+      name: '李老师',
+      avatar: '',
+      title: '高级后端工程师',
+      introduction: '拥有10年Java开发经验，精通Spring生态系统，曾主导多个大型企业级项目架构设计。'
+    },
+    lessonCount: 16,
+    studentCount: 1789,
+    rating: 4.7,
+    createTime: new Date().toISOString()
   }
 ]
+
+// 模拟章节数据
+const mockChapters: Record<number, Chapter[]> = {
+  1: [
+    {
+      id: 1,
+      title: 'Vue 3 基础入门',
+      chapterNumber: 1,
+      lessons: [
+        {
+          id: 1,
+          title: 'Vue 3 简介与环境搭建',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 930,
+          lessonNumber: 1,
+          isFree: true
+        },
+        {
+          id: 2,
+          title: 'Vue 3 响应式系统原理',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1335,
+          lessonNumber: 2,
+          isFree: true
+        },
+        {
+          id: 3,
+          title: '模板语法与指令',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1520,
+          lessonNumber: 3,
+          isFree: false
+        }
+      ]
+    },
+    {
+      id: 2,
+      title: '组件开发进阶',
+      chapterNumber: 2,
+      lessons: [
+        {
+          id: 4,
+          title: '组件基础概念',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1125,
+          lessonNumber: 1,
+          isFree: false
+        },
+        {
+          id: 5,
+          title: '组件通信方式',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1800,
+          lessonNumber: 2,
+          isFree: false
+        }
+      ]
+    }
+  ],
+  2: [
+    {
+      id: 3,
+      title: 'Spring Boot 核心概念',
+      chapterNumber: 1,
+      lessons: [
+        {
+          id: 6,
+          title: 'Spring Boot 简介与快速入门',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1200,
+          lessonNumber: 1,
+          isFree: true
+        },
+        {
+          id: 7,
+          title: 'Spring Boot 自动配置原理',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1500,
+          lessonNumber: 2,
+          isFree: true
+        }
+      ]
+    }
+  ],
+  3: [
+    {
+      id: 4,
+      title: 'React Hooks 基础',
+      chapterNumber: 1,
+      lessons: [
+        {
+          id: 8,
+          title: 'React Hooks 简介',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 900,
+          lessonNumber: 1,
+          isFree: true
+        },
+        {
+          id: 9,
+          title: 'useState 与 useEffect',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1200,
+          lessonNumber: 2,
+          isFree: true
+        }
+      ]
+    }
+  ],
+  13: [
+    {
+      id: 5,
+      title: '微服务架构基础',
+      chapterNumber: 1,
+      lessons: [
+        {
+          id: 10,
+          title: '微服务架构概述',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 1800,
+          lessonNumber: 1,
+          isFree: true
+        },
+        {
+          id: 11,
+          title: '微服务设计原则',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 2400,
+          lessonNumber: 2,
+          isFree: true
+        },
+        {
+          id: 12,
+          title: '服务注册与发现',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 3000,
+          lessonNumber: 3,
+          isFree: false
+        },
+        {
+          id: 13,
+          title: '配置中心',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 2700,
+          lessonNumber: 4,
+          isFree: false
+        },
+        {
+          id: 14,
+          title: '服务熔断与限流',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 3600,
+          lessonNumber: 5,
+          isFree: false
+        }
+      ]
+    },
+    {
+      id: 6,
+      title: 'Spring Cloud 实战',
+      chapterNumber: 2,
+      lessons: [
+        {
+          id: 15,
+          title: 'Spring Cloud 简介',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 2100,
+          lessonNumber: 1,
+          isFree: false
+        },
+        {
+          id: 16,
+          title: 'Eureka 服务注册中心',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 3300,
+          lessonNumber: 2,
+          isFree: false
+        },
+        {
+          id: 17,
+          title: 'Ribbon 负载均衡',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 2700,
+          lessonNumber: 3,
+          isFree: false
+        },
+        {
+          id: 18,
+          title: 'Feign 服务调用',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 3000,
+          lessonNumber: 4,
+          isFree: false
+        },
+        {
+          id: 19,
+          title: 'Hystrix 熔断器',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 3600,
+          lessonNumber: 5,
+          isFree: false
+        }
+      ]
+    }
+  ]
+}
+
+// 获取课程数据
+const getCourseById = (id: number): Course | undefined => {
+  return mockCourses.find(course => course.id === id)
+}
+
+// 获取章节数据
+const getChaptersByCourseId = (courseId: number): Chapter[] => {
+  return mockChapters[courseId] || [
+    {
+      id: 1,
+      title: '课程介绍',
+      chapterNumber: 1,
+      lessons: [
+        {
+          id: 1,
+          title: '课程概述',
+          videoUrl: '/videos/Vue3极简2025版教程.mp4',
+          duration: 600,
+          lessonNumber: 1,
+          isFree: true
+        }
+      ]
+    }
+  ]
+}
 
 const comments = ref([
   {
@@ -616,14 +1277,20 @@ const handleFullscreenChange = () => {
 onMounted(() => {
   // 模拟 API 调用
   setTimeout(() => {
-    course.value = mockCourse
-    chapters.value = mockChapters
-    if (mockChapters.length > 0) {
-      activeChapter.value = mockChapters[0].id
-      // 默认选择第一个免费课程
-      const firstFreeLesson = mockChapters[0].lessons.find(lesson => lesson.isFree)
-      if (firstFreeLesson) {
-        currentLesson.value = firstFreeLesson
+    const id = parseInt(courseId)
+    const courseData = getCourseById(id)
+    const chaptersData = getChaptersByCourseId(id)
+    
+    if (courseData) {
+      course.value = courseData
+      chapters.value = chaptersData
+      if (chaptersData.length > 0) {
+        activeChapter.value = chaptersData[0].id
+        // 默认选择第一个免费课程
+        const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
+        if (firstFreeLesson) {
+          currentLesson.value = firstFreeLesson
+        }
       }
     }
     startProgressTimer()
@@ -814,14 +1481,20 @@ const stopProgressTimer = () => {
 onMounted(() => {
   // 模拟 API 调用
   setTimeout(() => {
-    course.value = mockCourse
-    chapters.value = mockChapters
-    if (mockChapters.length > 0) {
-      activeChapter.value = mockChapters[0].id
-      // 默认选择第一个免费课程
-      const firstFreeLesson = mockChapters[0].lessons.find(lesson => lesson.isFree)
-      if (firstFreeLesson) {
-        currentLesson.value = firstFreeLesson
+    const id = parseInt(courseId)
+    const courseData = getCourseById(id)
+    const chaptersData = getChaptersByCourseId(id)
+    
+    if (courseData) {
+      course.value = courseData
+      chapters.value = chaptersData
+      if (chaptersData.length > 0) {
+        activeChapter.value = chaptersData[0].id
+        // 默认选择第一个免费课程
+        const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
+        if (firstFreeLesson) {
+          currentLesson.value = firstFreeLesson
+        }
       }
     }
     startProgressTimer()

@@ -57,19 +57,26 @@ const handleSelect = (key: string) => {
       break
     case '3':
       if (userStore.isLogin) {
-        router.push('/study')
+        router.push('/my-courses')
       } else {
         router.push('/login')
       }
       break
     case '4':
       if (userStore.isLogin) {
-        router.push('/my-courses')
+        router.push('/study-records')
       } else {
         router.push('/login')
       }
       break
     case '5':
+      if (userStore.isLogin) {
+        router.push('/notes')
+      } else {
+        router.push('/login')
+      }
+      break
+    case '6':
       if (isCurrentUserAdmin.value) {
         router.push('/admin/users')
       } else {
@@ -247,19 +254,20 @@ onMounted(() => {
 
         <div class="nav-menu">
           <el-menu
-              :default-active="activeIndex"
-              mode="horizontal"
-              @select="handleSelect"
-              background-color="#545c64"
-              text-color="#fff"
-              active-text-color="#ffd04b"
-          >
-            <el-menu-item index="1">首页</el-menu-item>
-            <el-menu-item index="2">课程</el-menu-item>
-            <el-menu-item v-if="isAdmin" index="3">学习中心</el-menu-item>
-            <el-menu-item v-if="isAdmin" index="4">我的课程</el-menu-item>
-            <el-menu-item v-if="isAdmin && isCurrentUserAdmin" index="5">管理中心</el-menu-item>
-          </el-menu>
+                :default-active="activeIndex"
+                mode="horizontal"
+                @select="handleSelect"
+                background-color="#545c64"
+                text-color="#fff"
+                active-text-color="#ffd04b"
+            >
+              <el-menu-item index="1">首页</el-menu-item>
+              <el-menu-item index="2">课程</el-menu-item>
+              <el-menu-item v-if="isAdmin" index="3">我的课程</el-menu-item>
+              <el-menu-item v-if="isAdmin" index="4">学习记录</el-menu-item>
+              <el-menu-item v-if="isAdmin" index="5">我的笔记</el-menu-item>
+              <el-menu-item v-if="isAdmin && isCurrentUserAdmin" index="6">管理中心</el-menu-item>
+            </el-menu>
         </div>
 
         <div class="search-box">

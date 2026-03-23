@@ -160,6 +160,10 @@ const goToNotes = () => {
   router.push('/notes')
 }
 
+const goToCollections = () => {
+  router.push('/collections')
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   initFormData()
@@ -216,7 +220,7 @@ onMounted(() => {
                 <el-icon><Document /></el-icon>
                 <span>我的笔记</span>
               </div>
-              <div class="link-item">
+              <div class="link-item" @click="goToCollections">
                 <el-icon><Collection /></el-icon>
                 <span>我的收藏</span>
               </div>

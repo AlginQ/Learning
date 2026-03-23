@@ -408,11 +408,71 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 
 // 学习进度
 const currentProgress = ref(0)
-const completedLessons = ref(3) // 模拟已完成3个课时
+const completedLessons = ref(0)
 const totalLessons = computed(() => {
   return chapters.value.reduce((total, chapter) => total + chapter.lessons.length, 0)
 })
-const totalStudyTime = ref(7200) // 秒
+const totalStudyTime = ref(0) // 秒
+
+// 从本地存储加载学习进度
+const loadLearningProgress = (courseId: number) => {
+  const storedProgress = localStorage.getItem(`learning_progress_${courseId}`)
+  if (storedProgress) {
+    try {
+      const progress = JSON.parse(storedProgress)
+      currentProgress.value = progress.currentProgress || 0
+      completedLessons.value = progress.completedLessons || 0
+      totalStudyTime.value = progress.totalStudyTime || 0
+      return progress
+    } catch (error) {
+      console.error('加载学习进度失败:', error)
+    }
+  }
+  return null
+}
+
+// 保存学习进度到本地存储
+const saveLearningProgress = (courseId: number) => {
+  const progress = {
+    currentProgress: currentProgress.value,
+    completedLessons: completedLessons.value,
+    totalStudyTime: totalStudyTime.value,
+    lastUpdated: new Date().toISOString()
+  }
+  localStorage.setItem(`learning_progress_${courseId}`, JSON.stringify(progress))
+  
+  // 同时保存课程基本信息到本地存储，以便MyCourses页面使用
+  if (course.value) {
+    const courseInfo = {
+      id: course.value.id,
+      title: course.value.title,
+      coverImage: course.value.coverImage
+    }
+    localStorage.setItem(`course_info_${courseId}`, JSON.stringify(courseInfo))
+  }
+}
+
+// 保存当前课时进度
+const saveLessonProgress = (courseId: number, lessonId: number, time: number) => {
+  const storedLessonProgress = localStorage.getItem(`lesson_progress_${courseId}`)
+  const lessonProgress = storedLessonProgress ? JSON.parse(storedLessonProgress) : {}
+  lessonProgress[lessonId] = time
+  localStorage.setItem(`lesson_progress_${courseId}`, JSON.stringify(lessonProgress))
+}
+
+// 加载当前课时进度
+const loadLessonProgress = (courseId: number, lessonId: number) => {
+  const storedLessonProgress = localStorage.getItem(`lesson_progress_${courseId}`)
+  if (storedLessonProgress) {
+    try {
+      const lessonProgress = JSON.parse(storedLessonProgress)
+      return lessonProgress[lessonId] || 0
+    } catch (error) {
+      console.error('加载课时进度失败:', error)
+    }
+  }
+  return 0
+}
 
 // 交互状态
 const isFavorite = ref(false)
@@ -1284,12 +1344,18 @@ onMounted(() => {
     if (courseData) {
       course.value = courseData
       chapters.value = chaptersData
+      
+      // 加载课程学习进度
+      loadLearningProgress(id)
+      
       if (chaptersData.length > 0) {
         activeChapter.value = chaptersData[0].id
         // 默认选择第一个免费课程
         const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
         if (firstFreeLesson) {
           currentLesson.value = firstFreeLesson
+          // 加载课时进度
+          currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
         }
       }
     }
@@ -1343,7 +1409,36 @@ const saveNote = () => {
 
 // 章节状态相关函数
 const isLessonCompleted = (lesson: Lesson): boolean => {
-  return lesson.id <= 3  // 模拟前3个课时已完成
+  if (!course.value) return false
+  
+  // 从本地存储获取已完成的课时
+  const storedProgress = localStorage.getItem(`completed_lessons_${course.value.id}`)
+  if (storedProgress) {
+    try {
+      const completedLessonIds = JSON.parse(storedProgress)
+      return completedLessonIds.includes(lesson.id)
+    } catch (error) {
+      console.error('加载已完成课时失败:', error)
+    }
+  }
+  
+  // 检查当前进度是否达到90%以上
+  if (currentLesson.value?.id === lesson.id) {
+    return currentProgress.value >= 90
+  }
+  
+  return false
+}
+
+// 标记课时为已完成
+const markLessonAsCompleted = (courseId: number, lessonId: number) => {
+  const storedProgress = localStorage.getItem(`completed_lessons_${courseId}`)
+  const completedLessonIds = storedProgress ? JSON.parse(storedProgress) : []
+  
+  if (!completedLessonIds.includes(lessonId)) {
+    completedLessonIds.push(lessonId)
+    localStorage.setItem(`completed_lessons_${courseId}`, JSON.stringify(completedLessonIds))
+  }
 }
 
 const getLessonStatusColor = (lesson: Lesson): string => {
@@ -1447,7 +1542,12 @@ const goBack = () => {
 const selectLesson = (lesson: Lesson, chapter: Chapter) => {
   currentLesson.value = lesson
   activeChapter.value = chapter.id
-  currentTime.value = 0 // 重置播放时间
+  
+  // 加载该课时的保存进度
+  if (course.value) {
+    currentTime.value = loadLessonProgress(course.value.id, lesson.id)
+  }
+  
   ElMessage.success(`开始学习: ${lesson.title}`)
 }
 
@@ -1458,13 +1558,30 @@ const startProgressTimer = () => {
   if (progressInterval) clearInterval(progressInterval)
   
   progressInterval = window.setInterval(() => {
-    if (isPlaying.value && currentLesson.value) {
+    if (isPlaying.value && currentLesson.value && course.value) {
       currentTime.value = Math.min(currentLesson.value.duration, currentTime.value + 1)
       currentProgress.value = Math.round((currentTime.value / currentLesson.value.duration) * 100)
       
       // 模拟学习时长增加
       if (currentTime.value % 60 === 0) {
         totalStudyTime.value += 60
+        // 每60秒保存一次学习进度
+        saveLearningProgress(course.value.id)
+      }
+      
+      // 每10秒保存一次课时进度
+      if (currentTime.value % 10 === 0) {
+        saveLessonProgress(course.value.id, currentLesson.value.id, currentTime.value)
+      }
+      
+      // 课时完成判断
+      if (currentTime.value >= currentLesson.value.duration * 0.9) { // 观看90%以上算完成
+        // 标记为已完成
+        if (!isLessonCompleted(currentLesson.value)) {
+          completedLessons.value++
+          markLessonAsCompleted(course.value.id, currentLesson.value.id)
+          saveLearningProgress(course.value.id)
+        }
       }
     }
   }, 1000)
@@ -1488,12 +1605,21 @@ onMounted(() => {
     if (courseData) {
       course.value = courseData
       chapters.value = chaptersData
+      
+      // 保存课程信息到本地存储，确保课程出现在学习记录中
+      saveLearningProgress(id)
+      
+      // 加载课程学习进度
+      loadLearningProgress(id)
+      
       if (chaptersData.length > 0) {
         activeChapter.value = chaptersData[0].id
         // 默认选择第一个免费课程
         const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
         if (firstFreeLesson) {
           currentLesson.value = firstFreeLesson
+          // 加载课时进度
+          currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
         }
       }
     }

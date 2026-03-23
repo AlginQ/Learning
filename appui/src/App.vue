@@ -7,7 +7,7 @@ import { computed } from 'vue'
 const route = useRoute()
 
 // 定义独立页面路由列表
-const noLayoutRoutes = ['Login', 'Register', 'Home', 'CourseDetailPage', 'Profile', 'MyCourses', 'Courses', 'StudyCenter']
+const noLayoutRoutes = ['Login', 'Register', 'Home', 'CourseDetailPage', 'Profile', 'MyCourses', 'Courses', 'StudyCenter', 'Notes', 'StudyRecords', 'Collections']
 
 // 判断当前路由是否为独立页面
 const isIndependentPage = computed(() => {

@@ -41,12 +41,6 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/study',
-    name: 'StudyCenter',
-    component: () => import('@/views/study/StudyCenter.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/Profile.vue'),
@@ -74,6 +68,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/notes',
     name: 'Notes',
     component: () => import('@/views/user/Notes.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/collections',
+    name: 'Collections',
+    component: () => import('@/views/user/Collections.vue'),
     meta: { requiresAuth: true }
   },
   // 管理员路由 - 修复双层侧边栏问题

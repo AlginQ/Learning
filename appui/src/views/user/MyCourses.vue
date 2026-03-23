@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -91,70 +91,168 @@ const filters = [
 // 当前选中的筛选标签
 const activeFilter = ref('learning')
 
+// 课程数据
+const courses = ref<any[]>([])
+
 // 统计数据
-const stats = ref({
-  learningCount: 3,
-  completedCount: 2,
-  totalDuration: 1230 // 分钟
+const stats = reactive({
+  learningCount: 0,
+  completedCount: 0,
+  totalDuration: 0 // 分钟
 })
 
-// 模拟课程数据
-const courses = ref([
-  {
-    id: 1,
-    title: 'Vue 3从入门到实战',
-    cover_image: 'https://picsum.photos/400/225?random=1',
-    progress: 65,
-    lastStudyTime: '2024-03-10 15:30',
-    status: 'learning',
-    lastPlayTime: 1200 // 秒
-  },
-  {
-    id: 2,
-    title: 'Spring Boot企业级开发',
-    cover_image: 'https://picsum.photos/400/225?random=2',
-    progress: 40,
-    lastStudyTime: '2024-03-09 10:15',
-    status: 'learning',
-    lastPlayTime: 800 // 秒
-  },
-  {
-    id: 3,
-    title: 'React Hooks完全指南',
-    cover_image: 'https://picsum.photos/400/225?random=3',
-    progress: 85,
-    lastStudyTime: '2024-03-08 14:20',
-    status: 'learning',
-    lastPlayTime: 1500 // 秒
-  },
-  {
-    id: 4,
-    title: 'JavaScript高级编程',
-    cover_image: 'https://picsum.photos/400/225?random=4',
-    progress: 100,
-    lastStudyTime: '2024-03-05 09:45',
-    status: 'completed',
-    lastPlayTime: 3600 // 秒
-  },
-  {
-    id: 5,
-    title: 'TypeScript入门到精通',
-    cover_image: 'https://picsum.photos/400/225?random=5',
-    progress: 100,
-    lastStudyTime: '2024-03-01 16:50',
-    status: 'completed',
-    lastPlayTime: 2800 // 秒
-  },
-  {
-    id: 6,
-    title: 'HTML5与CSS3实战',
-    cover_image: 'https://picsum.photos/400/225?random=6',
-    progress: 0,
-    lastStudyTime: '2024-02-28 11:30',
-    status: 'favorited',
-    lastPlayTime: 0 // 秒
+// 从本地存储加载课程数据
+const loadCoursesFromStorage = () => {
+  // 获取所有课程的学习进度
+  const courseProgressMap: Record<number, any> = {}
+  
+  // 首先处理学习进度数据
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('learning_progress_')) {
+      const courseId = parseInt(key.replace('learning_progress_', ''))
+      try {
+        const progressData = JSON.parse(localStorage.getItem(key) || '{}')
+        
+        // 获取课程基本信息
+        const courseInfo = getCourseInfo(courseId)
+        if (courseInfo) {
+          // 获取最后学习时间
+          const lastStudyTime = progressData.lastUpdated ? new Date(progressData.lastUpdated).toLocaleString() : '从未学习'
+          
+          // 计算学习状态
+          let status = 'learning'
+          if (progressData.currentProgress >= 100) {
+            status = 'completed'
+          }
+          
+          // 获取最后播放时间
+          const lessonProgressKey = `lesson_progress_${courseId}`
+          const lessonProgressData = localStorage.getItem(lessonProgressKey)
+          let lastPlayTime = 0
+          if (lessonProgressData) {
+            try {
+              const lessonProgress = JSON.parse(lessonProgressData)
+              // 获取最大的播放时间作为最后播放时间
+              const playTimes = Object.values(lessonProgress).map(Number)
+              if (playTimes.length > 0) {
+                lastPlayTime = Math.max(...playTimes)
+              }
+            } catch (error) {
+              console.error('解析课时进度失败:', error)
+            }
+          }
+          
+          courseProgressMap[courseId] = {
+            id: courseId,
+            title: courseInfo.title,
+            cover_image: courseInfo.coverImage,
+            progress: progressData.currentProgress || 0,
+            lastStudyTime,
+            status,
+            lastPlayTime,
+            totalDuration: progressData.totalStudyTime || 0
+          }
+        }
+      } catch (error) {
+        console.error('解析学习进度失败:', error)
+      }
+    }
   }
-])
+  
+  // 然后处理课程信息数据（确保即使没有学习进度也能显示课程）
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('course_info_')) {
+      const courseId = parseInt(key.replace('course_info_', ''))
+      // 只有当该课程还没有在courseProgressMap中时才添加
+      if (!courseProgressMap[courseId]) {
+        try {
+          const courseInfo = JSON.parse(localStorage.getItem(key) || '{}')
+          if (courseInfo.id) {
+            courseProgressMap[courseId] = {
+              id: courseInfo.id,
+              title: courseInfo.title,
+              cover_image: courseInfo.coverImage,
+              progress: 0,
+              lastStudyTime: '从未学习',
+              status: 'learning',
+              lastPlayTime: 0,
+              totalDuration: 0
+            }
+          }
+        } catch (error) {
+          console.error('解析课程信息失败:', error)
+        }
+      }
+    }
+  }
+  
+  // 转换为数组
+  courses.value = Object.values(courseProgressMap)
+  
+  // 更新统计数据
+  updateStats()
+}
+
+// 获取课程基本信息（优先从本地存储获取，其次使用模拟数据）
+const getCourseInfo = (courseId: number) => {
+  // 先从本地存储获取课程信息
+  const courseInfoKey = `course_info_${courseId}`
+  const storedCourseInfo = localStorage.getItem(courseInfoKey)
+  if (storedCourseInfo) {
+    try {
+      return JSON.parse(storedCourseInfo)
+    } catch (error) {
+      console.error('解析课程信息失败:', error)
+    }
+  }
+  
+  // 如果本地存储中没有，则使用模拟数据
+  const mockCourses = [
+    { id: 1, title: 'Vue 3入门教程', coverImage: 'https://picsum.photos/400/225?random=1' },
+    { id: 2, title: 'Spring Boot 企业级开发', coverImage: 'https://picsum.photos/400/225?random=2' },
+    { id: 3, title: 'React Hooks 完全指南', coverImage: 'https://picsum.photos/400/225?random=3' },
+    { id: 4, title: 'JavaScript 高级编程', coverImage: 'https://picsum.photos/400/225?random=4' },
+    { id: 5, title: 'TypeScript 入门到精通', coverImage: 'https://picsum.photos/400/225?random=5' },
+    { id: 6, title: 'HTML5与CSS3实战', coverImage: 'https://picsum.photos/400/225?random=6' },
+    { id: 7, title: '前端性能优化', coverImage: 'https://picsum.photos/400/225?random=7' },
+    { id: 8, title: 'Vue 3 组件库开发', coverImage: 'https://picsum.photos/400/225?random=8' },
+    { id: 9, title: 'Spring Cloud 微服务架构', coverImage: 'https://picsum.photos/400/225?random=9' },
+    { id: 10, title: 'Node.js 后端开发', coverImage: 'https://picsum.photos/400/225?random=10' },
+    { id: 11, title: 'Python 后端开发', coverImage: 'https://picsum.photos/400/225?random=11' },
+    { id: 12, title: 'Go 语言实战', coverImage: 'https://picsum.photos/400/225?random=12' },
+    { id: 13, title: '微服务架构设计', coverImage: 'https://picsum.photos/400/225?random=13' },
+    { id: 14, title: 'Flutter 跨平台开发', coverImage: 'https://picsum.photos/400/225?random=14' },
+    { id: 15, title: 'React Native 开发', coverImage: 'https://picsum.photos/400/225?random=15' },
+    { id: 16, title: 'iOS 开发基础', coverImage: 'https://picsum.photos/400/225?random=16' },
+    { id: 17, title: 'Android 开发入门', coverImage: 'https://picsum.photos/400/225?random=17' },
+    { id: 18, title: '移动应用UI设计', coverImage: 'https://picsum.photos/400/225?random=18' },
+    { id: 19, title: 'MySQL 数据库优化', coverImage: 'https://picsum.photos/400/225?random=19' },
+    { id: 20, title: 'PostgreSQL 高级特性', coverImage: 'https://picsum.photos/400/225?random=20' },
+    { id: 21, title: 'MongoDB 实战', coverImage: 'https://picsum.photos/400/225?random=21' },
+    { id: 22, title: '数据库设计与建模', coverImage: 'https://picsum.photos/400/225?random=22' },
+    { id: 23, title: 'Redis 缓存技术', coverImage: 'https://picsum.photos/400/225?random=23' }
+  ]
+  
+  return mockCourses.find(course => course.id === courseId)
+}
+
+// 更新统计数据
+const updateStats = () => {
+  const learningCount = courses.value.filter(course => course.status === 'learning').length
+  const completedCount = courses.value.filter(course => course.status === 'completed').length
+  const totalDuration = Math.round(courses.value.reduce((total, course) => total + (course.totalDuration || 0), 0) / 60) // 转换为分钟
+  
+  stats.learningCount = learningCount
+  stats.completedCount = completedCount
+  stats.totalDuration = totalDuration
+}
+
+// 页面加载时从本地存储加载数据
+onMounted(() => {
+  loadCoursesFromStorage()
+})
 
 // 根据筛选标签过滤课程
 const filteredCourses = computed(() => {

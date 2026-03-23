@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
-import { VideoPlay, Clock, Document, DataAnalysis, Calendar, Trophy, Fire } from '@element-plus/icons-vue'
+import { VideoPlay, Clock, Document, DataAnalysis, Calendar, Trophy, Star } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const userStore = useUserStore()
@@ -313,7 +313,7 @@ onMounted(() => {
               <el-col :span="6">
                 <div class="stat-card">
                   <div class="stat-icon bg-orange">
-                    <el-icon><Fire /></el-icon>
+                    <el-icon><Star /></el-icon>
                   </div>
                   <div class="stat-content">
                     <div class="stat-number">{{ studyStats.currentStreak }}</div>

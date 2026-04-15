@@ -4,7 +4,7 @@ import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElDialog, ElForm, ElFormItem, ElInput, ElButton } from 'element-plus'
 import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document, Upload, Refresh, UserFilled } from '@element-plus/icons-vue'
-import { updateUserProfile, updateUserAvatar, changePassword } from '@/api/auth'
+import { updateUserProfile, updateUserAvatar, changePassword, applyForTeacherApi } from '@/api/auth'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -196,19 +196,27 @@ const handleTeacherApply = async (formEl: any) => {
   try {
     const valid = await formEl.validate()
     if (valid) {
-      // 模拟API请求
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // 调用真实API
+      const response = await applyForTeacherApi({
+        realName: teacherApplyForm.realName,
+        major: teacherApplyForm.major,
+        qualification: teacherApplyForm.qualification
+      })
       
-      ElMessage.success('申请已提交，等待管理员审核')
-      teacherApplyDialogVisible.value = false
-      // 重置表单
-      teacherApplyForm.realName = ''
-      teacherApplyForm.major = ''
-      teacherApplyForm.qualification = ''
-      formEl.resetFields()
+      if (response.code === 200) {
+        ElMessage.success('申请已提交，等待管理员审核')
+        teacherApplyDialogVisible.value = false
+        // 重置表单
+        teacherApplyForm.realName = ''
+        teacherApplyForm.major = ''
+        teacherApplyForm.qualification = ''
+        formEl.resetFields()
+      } else {
+        ElMessage.error('申请提交失败: ' + response.message)
+      }
     }
   } catch (error: any) {
-    ElMessage.error('申请提交失败')
+    ElMessage.error('申请提交失败: ' + error.message)
   }
 }
 

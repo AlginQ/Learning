@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Edit, Delete, Plus } from '@element-plus/icons-vue'
-import { getAllUsersApi, disableUserApi, enableUserApi, deleteUserApi } from '@/api/admin'
+import { getAllUsersApi, disableUserApi, enableUserApi, deleteUserApi, updateUserRoleApi } from '@/api/admin'
 
 const route = useRoute()
 
@@ -35,15 +35,19 @@ const pagination = ref({
 const loadUsers = async () => {
   loading.value = true
   try {
+    console.log('开始获取用户列表...')
     const response = await getAllUsersApi()
+    console.log('获取用户列表响应:', response)
     if (response.code === 200) {
       users.value = response.data || []
       pagination.value.total = users.value.length
-      console.log('用户数据已加载')
+      console.log('用户数据已加载:', users.value)
     } else {
+      console.error('获取用户列表失败:', response.message)
       ElMessage.error('获取用户列表失败: ' + response.message)
     }
   } catch (error: any) {
+    console.error('获取用户列表错误:', error)
     ElMessage.error('获取用户列表失败: ' + error.message)
   } finally {
     loading.value = false
@@ -59,15 +63,20 @@ const changeUserRole = async (user: UserItem, newRole: string) => {
       type: 'warning'
     })
     
-    // 这里需要添加修改角色的API调用
-    // 由于后端API尚未实现，暂时模拟
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 调用修改角色的API
+    const response = await updateUserRoleApi(user.id, newRole)
     
-    // 更新本地数据
-    user.role = newRole
-    ElMessage.success('角色修改成功')
-  } catch (error) {
-    // 用户取消操作
+    if (response.code === 200) {
+      // 更新本地数据
+      user.role = newRole
+      ElMessage.success('角色修改成功')
+    } else {
+      ElMessage.error('角色修改失败: ' + response.message)
+    }
+  } catch (error: any) {
+    if (error.message !== 'cancel') {
+      ElMessage.error('操作失败: ' + error.message)
+    }
   }
 }
 

@@ -84,4 +84,9 @@ public interface UserService extends IService<User> {
      * 更新用户密码
      */
     void updatePassword(Long userId, String oldPassword, String newPassword);
+    
+    /**
+     * 更新用户角色
+     */
+    void updateUserRole(Long userId, String role);
 }

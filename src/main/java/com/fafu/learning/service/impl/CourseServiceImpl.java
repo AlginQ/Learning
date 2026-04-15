@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -29,10 +30,10 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional
     public Course createCourse(Course course) {
-        course.setCreateTime(new Date());
-        course.setUpdateTime(new Date());
+        course.setCreateTime(LocalDateTime.now());
+        course.setUpdateTime(LocalDateTime.now());
         course.setStudentCount(0);
-        course.setRating(0.0);
+        course.setRating(BigDecimal.ZERO);
         course.setStatus(1); // 默认为上架状态
         save(course);
         return course;
@@ -41,7 +42,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional
     public Course updateCourse(Course course) {
-        course.setUpdateTime(new Date());
+        course.setUpdateTime(LocalDateTime.now());
         updateById(course);
         return course;
     }

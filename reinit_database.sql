@@ -44,13 +44,16 @@ VALUES
     (7, 3, '核心特性', 2, 'Spring Boot核心特性章节', NOW(), NOW());
 -- 插入默认管理员用户 (密码: admin123)
 -- 使用标准BCrypt加密，成本因子为10
-INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb0bta/OauRxaOKSr.QhqyD2R5FKvMQjmHoLkm5Sy', 'admin@example.com', '管理员', 'ADMIN', 1);
+INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`, `status`, `real_name`, `title`, `introduction`, `specialty`) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb0bta/OauRxaOKSr.QhqyD2R5FKvMQjmHoLkm5Sy', 'admin@example.com', '管理员', 'ADMIN', 1, '管理员', '系统管理员', '系统管理员', '计算机科学');
 
 -- 插入测试普通用户 (密码: user123)  
 -- 使用标准BCrypt加密，成本因子为10
-INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`, `status`) VALUES
-('testuser', '$2a$10$r3.l0wUOsEWAmfnJdqHb2e.nds75HiRQDQiM7VcxcrVQMvDyB9gsO', 'user@example.com', '测试用户', 'USER', 1);
+INSERT IGNORE INTO `user` (`username`, `password`, `email`, `nickname`, `role`, `status`, `real_name`, `title`, `introduction`, `specialty`) VALUES
+('testuser', '$2a$10$r3.l0wUOsEWAmfnJdqHb2e.nds75HiRQDQiM7VcxcrVQMvDyB9gsO', 'user@example.com', '测试用户', 'USER', 1, NULL, NULL, NULL, NULL);
+
+-- 将所有用户状态设置为正常
+UPDATE `user` SET `status` = 1;
 
 COMMIT;
 

@@ -65,12 +65,32 @@ public class User {
     /**
      * 状态 0-禁用 1-正常
      */
-    private Integer status;
+    private Integer status = 1;
     
     /**
      * 最后登录时间
      */
     private LocalDateTime lastLoginTime;
+    
+    /**
+     * 真实姓名
+     */
+    private String realName;
+    
+    /**
+     * 职称
+     */
+    private String title;
+    
+    /**
+     * 简介
+     */
+    private String introduction;
+    
+    /**
+     * 专业
+     */
+    private String specialty;
     
     /**
      * 创建时间

@@ -47,7 +47,7 @@ public class TeacherApplyServiceImpl extends ServiceImpl<TeacherApplyMapper, Tea
     
     @Override
     public TeacherApply getApplyByUserId(Long userId) {
-        return getOne(new QueryWrapper<TeacherApply>().eq("user_id", userId));
+        return getOne(new QueryWrapper<TeacherApply>().eq("user_id", userId).eq("status", 0));
     }
     
     @Override
@@ -76,13 +76,23 @@ public class TeacherApplyServiceImpl extends ServiceImpl<TeacherApplyMapper, Tea
         
         updateById(apply);
         
-        // 如果审核通过，更新用户角色为TEACHER
+        // 如果审核通过，更新用户角色为TEACHER，并更新用户信息
         if (status == 1) {
             User user = userService.getById(apply.getUserId());
             if (user != null) {
+                System.out.println("更新用户信息: userId=" + user.getId() + ", realName=" + apply.getRealName() + ", major=" + apply.getMajor() + ", qualification=" + apply.getQualification());
                 user.setRole("TEACHER");
-                userService.updateById(user);
+                user.setRealName(apply.getRealName());
+                user.setSpecialty(apply.getMajor());
+                user.setIntroduction(apply.getQualification());
+                boolean updateResult = userService.updateById(user);
+                System.out.println("更新结果: " + updateResult);
+            } else {
+                System.out.println("用户不存在: userId=" + apply.getUserId());
             }
+            // 审核通过后删除申请记录
+            removeById(applyId);
+            System.out.println("审核通过，删除申请记录: applyId=" + applyId);
         }
     }
 }

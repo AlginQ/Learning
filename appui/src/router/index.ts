@@ -100,6 +100,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'CourseManagement',
         component: () => import('@/views/admin/CourseManagement.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'teachers',
+        name: 'TeacherManagement',
+        component: () => import('@/views/admin/TeacherManagement.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
   },

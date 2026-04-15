@@ -40,7 +40,32 @@ public class UserInfoVO {
     private String role;
     
     /**
+     * 真实姓名
+     */
+    private String realName;
+    
+    /**
+     * 职称
+     */
+    private String title;
+    
+    /**
+     * 简介
+     */
+    private String introduction;
+    
+    /**
+     * 专业
+     */
+    private String specialty;
+    
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
+    
+    /**
+     * 状态 0-禁用 1-正常
+     */
+    private Integer status;
 }

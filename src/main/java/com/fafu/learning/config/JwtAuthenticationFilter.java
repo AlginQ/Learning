@@ -51,8 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     
                     // 验证token有效性
                     if (jwtUtil.validateToken(token)) {
-                        // 从token中提取用户名
+                        // 从token中提取用户名和用户ID
                         String username = jwtUtil.getUsernameFromToken(token);
+                        Long userId = jwtUtil.getUserIdFromToken(token);
                         
                         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                             // 加载用户详情（包含角色信息）
@@ -65,6 +66,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             
                             // 设置安全上下文
                             SecurityContextHolder.getContext().setAuthentication(authentication);
+                        }
+                        
+                        // 将用户ID设置到请求属性中，供后续控制器使用
+                        if (userId != null) {
+                            request.setAttribute("userId", userId);
                         }
                     } else {
                         // Token无效，返回401未授权

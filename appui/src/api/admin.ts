@@ -35,3 +35,13 @@ export const getPendingTeacherAppliesApi = () => {
 export const reviewTeacherApplyApi = (id: number, status: number, remark?: string) => {
   return request.post<ApiResponse<null>>(`/api/teacher-apply/review/${id}`, { status, remark })
 }
+
+// 获取所有教师
+export const getAllTeachersApi = () => {
+  return request.get<ApiResponse<any[]>>('/api/teachers')
+}
+
+// 更新用户角色
+export const updateUserRoleApi = (id: number, role: string) => {
+  return request.put<ApiResponse<null>>(`/api/admin/users/${id}/role?role=${role}`)
+}

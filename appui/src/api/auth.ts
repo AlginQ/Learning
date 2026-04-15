@@ -37,3 +37,8 @@ export const updateUserAvatar = (avatarUrl: string) => {
 export const changePassword = (oldPassword: string, newPassword: string) => {
   return request.post<ApiResponse<null>>('/api/auth/password', { oldPassword, newPassword })
 }
+
+// 申请成为教师
+export const applyForTeacherApi = (data: { realName: string; major: string; qualification: string }) => {
+  return request.post<ApiResponse<null>>('/api/teacher-apply', data)
+}

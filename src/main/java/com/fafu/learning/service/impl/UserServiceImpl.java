@@ -135,7 +135,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     public List<UserInfoVO> getAllUsers() {
+        System.out.println("开始获取所有用户...");
         List<User> users = list();
+        System.out.println("获取到的用户数量: " + users.size());
+        for (User user : users) {
+            System.out.println("用户: " + user.getUsername() + "，角色: " + user.getRole());
+        }
         return users.stream()
             .map(user -> {
                 UserInfoVO vo = new UserInfoVO();
@@ -257,6 +262,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         // 更新密码
         user.setPassword(PasswordUtil.encode(newPassword));
+        updateById(user);
+    }
+
+    @Override
+    public void updateUserRole(Long userId, String role) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setRole(role);
         updateById(user);
     }
 }

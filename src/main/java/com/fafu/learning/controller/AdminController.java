@@ -118,4 +118,25 @@ public class AdminController {
             return ApiResult.fail("启用用户失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 修改用户角色 - 仅ADMIN角色可访问
+     * PUT /api/admin/users/{id}/role
+     *
+     * @param id 用户ID
+     * @param role 新角色
+     * @return ApiResult<Void> 操作结果
+     */
+    @PutMapping("/users/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResult<Void> updateUserRole(@PathVariable Long id, @RequestParam String role) {
+        try {
+            userService.updateUserRole(id, role);
+            return ApiResult.success("角色修改成功", null);
+        } catch (RuntimeException e) {
+            return ApiResult.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ApiResult.fail("修改角色失败: " + e.getMessage());
+        }
+    }
 }

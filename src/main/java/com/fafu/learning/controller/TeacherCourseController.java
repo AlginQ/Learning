@@ -95,7 +95,7 @@ public class TeacherCourseController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER')")
-    public ApiResult<Void> deleteCourse(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResult<String> deleteCourse(@PathVariable Long id, HttpServletRequest request) {
         try {
             Long teacherId = getTeacherIdFromRequest(request);
             if (teacherId == null) {

@@ -35,6 +35,7 @@ const activeMenu = computed(() => {
   if (routePath === '/study-records') return 'study-center'
   if (routePath === '/admin/users') return 'admin-users'
   if (routePath === '/admin/teacher-applies') return 'admin-teacher-applies'
+  if (routePath === '/admin/teachers') return 'admin-teachers'
   if (routePath === '/admin/courses') return 'admin-courses'
   if (routePath === '/teacher') return 'teacher-center'
   if (routePath === '/teacher/courses') return 'teacher-courses'
@@ -103,6 +104,13 @@ const menuItems = computed(() => {
       title: '教师申请管理',
       icon: UserFilled,
       path: '/admin/teacher-applies',
+      roles: ['ADMIN'] // 仅管理员可见
+    },
+    {
+      index: 'admin-teachers',
+      title: '教师管理',
+      icon: User,
+      path: '/admin/teachers',
       roles: ['ADMIN'] // 仅管理员可见
     },
     {

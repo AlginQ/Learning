@@ -4,6 +4,7 @@ import com.fafu.learning.common.ApiResult;
 import com.fafu.learning.entity.TeacherApply;
 import com.fafu.learning.service.TeacherApplyService;
 import com.fafu.learning.dto.TeacherApplyDTO;
+import com.fafu.learning.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,11 +23,14 @@ public class TeacherApplyController {
     @Autowired
     private TeacherApplyService teacherApplyService;
     
+    @Autowired
+    private JwtUtil jwtUtil;
+    
     /**
      * 提交教师申请
      */
     @PostMapping
-    public ApiResult<Void> submitApply(@RequestBody TeacherApplyDTO applyDTO, HttpServletRequest request) {
+    public ApiResult<String> submitApply(@RequestBody TeacherApplyDTO applyDTO, HttpServletRequest request) {
         try {
             // 从请求中获取用户ID（实际项目中应从JWT token中解析）
             Long userId = getUserIdFromRequest(request);
@@ -80,10 +84,9 @@ public class TeacherApplyController {
      */
     @PostMapping("/review/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResult<Void> reviewApply(
+    public ApiResult<String> reviewApply(
             @PathVariable Long id,
-            @RequestParam Integer status,
-            @RequestParam(required = false) String remark,
+            @RequestBody ReviewRequest reviewRequest,
             HttpServletRequest request) {
         try {
             Long reviewerId = getUserIdFromRequest(request);
@@ -91,7 +94,7 @@ public class TeacherApplyController {
                 return ApiResult.unauthorized("未授权");
             }
             
-            teacherApplyService.reviewApply(id, status, remark, reviewerId);
+            teacherApplyService.reviewApply(id, reviewRequest.getStatus(), reviewRequest.getRemark(), reviewerId);
             return ApiResult.success("审核成功");
         } catch (RuntimeException e) {
             return ApiResult.badRequest(e.getMessage());
@@ -101,11 +104,50 @@ public class TeacherApplyController {
     }
     
     /**
+     * 审核请求DTO
+     */
+    private static class ReviewRequest {
+        private Integer status;
+        private String remark;
+        
+        public Integer getStatus() {
+            return status;
+        }
+        
+        public void setStatus(Integer status) {
+            this.status = status;
+        }
+        
+        public String getRemark() {
+            return remark;
+        }
+        
+        public void setRemark(String remark) {
+            this.remark = remark;
+        }
+    }
+    
+    /**
      * 从请求中获取用户ID
      */
     private Long getUserIdFromRequest(HttpServletRequest request) {
-        // 实际项目中应从JWT token中解析用户ID
-        // 这里为了演示，返回固定值
-        return 1L;
+        // 从请求属性中获取用户ID（由JwtAuthenticationFilter设置）
+        Object userIdObj = request.getAttribute("userId");
+        if (userIdObj != null) {
+            return (Long) userIdObj;
+        }
+        
+        // 如果请求属性中没有，尝试从JWT token中解析
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            try {
+                // 使用JWT工具类解析token获取用户ID
+                return jwtUtil.getUserIdFromToken(token);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 }

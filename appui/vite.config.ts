@@ -11,14 +11,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8989',
-        changeOrigin: true,
-        secure: false
-      }
-    }
+    port: 3000
   },
   define: {
     __VUE_I18N_FULL_INSTALL__: true,

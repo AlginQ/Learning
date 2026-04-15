@@ -5,35 +5,35 @@ import type { LoginResponse, RegisterResponse, UserInfo } from '@/types/user'
 
 // 用户登录
 export const loginApi = (data: LoginRequest) => {
-  return request.post<ApiResponse<LoginResponse>>('/auth/login', data)
+  return request.post<ApiResponse<LoginResponse>>('/api/auth/login', data)
 }
 
 // 用户注册
 export const registerApi = (data: RegisterRequest) => {
-  return request.post<ApiResponse<RegisterResponse>>('/auth/register', data)
+  return request.post<ApiResponse<RegisterResponse>>('/api/auth/register', data)
 }
 
 // 获取当前用户信息
 export const getUserInfoApi = () => {
-  return request.get<ApiResponse<UserInfo>>('/auth/info')
+  return request.get<ApiResponse<UserInfo>>('/api/auth/info')
 }
 
 // 退出登录
 export const logoutApi = () => {
-  return request.post<ApiResponse<null>>('/auth/logout')
+  return request.post<ApiResponse<null>>('/api/auth/logout')
 }
 
 // 更新用户信息
 export const updateUserProfile = (data: any) => {
-  return request.put<ApiResponse<any>>('/auth/info', data)
+  return request.put<ApiResponse<any>>('/api/auth/info', data)
 }
 
 // 更新用户头像
 export const updateUserAvatar = (avatarUrl: string) => {
-  return request.post<ApiResponse<null>>('/auth/avatar', { avatarUrl })
+  return request.post<ApiResponse<null>>('/api/auth/avatar', { avatarUrl })
 }
 
 // 修改密码
 export const changePassword = (oldPassword: string, newPassword: string) => {
-  return request.post<ApiResponse<null>>('/auth/password', { oldPassword, newPassword })
+  return request.post<ApiResponse<null>>('/api/auth/password', { oldPassword, newPassword })
 }

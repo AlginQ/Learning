@@ -7,6 +7,7 @@ import {
   VideoPlay,
   DataAnalysis,
   User,
+  UserFilled,
   Management,
   Setting,
   SwitchButton
@@ -31,9 +32,12 @@ const activeMenu = computed(() => {
   if (routePath === '/') return 'home'
   if (routePath === '/my-courses') return 'my-courses'
   if (routePath === '/courses') return 'all-courses'
-  if (routePath === '/study') return 'study-center'
+  if (routePath === '/study-records') return 'study-center'
   if (routePath === '/admin/users') return 'admin-users'
+  if (routePath === '/admin/teacher-applies') return 'admin-teacher-applies'
   if (routePath === '/admin/courses') return 'admin-courses'
+  if (routePath === '/teacher') return 'teacher-center'
+  if (routePath === '/teacher/courses') return 'teacher-courses'
   return 'home'
 })
 
@@ -45,7 +49,43 @@ const menuItems = computed(() => {
       title: '首页',
       icon: HomeFilled,
       path: '/',
-      roles: ['USER', 'ADMIN'] // 所有用户可见
+      roles: ['USER', 'ADMIN', 'TEACHER'] // 所有用户可见
+    }
+  ]
+
+  // 学生菜单项
+  const studentMenus = [
+    {
+      index: 'my-courses',
+      title: '我的课程',
+      icon: VideoPlay,
+      path: '/my-courses',
+      roles: ['USER'] // 仅学生可见
+    },
+    {
+      index: 'study-center',
+      title: '学习中心',
+      icon: DataAnalysis,
+      path: '/study-records',
+      roles: ['USER'] // 仅学生可见
+    }
+  ]
+
+  // 教师菜单项
+  const teacherMenus = [
+    {
+      index: 'teacher-center',
+      title: '教师中心',
+      icon: User,
+      path: '/teacher',
+      roles: ['TEACHER'] // 仅教师可见
+    },
+    {
+      index: 'teacher-courses',
+      title: '课程管理',
+      icon: Management,
+      path: '/teacher/courses',
+      roles: ['TEACHER'] // 仅教师可见
     }
   ]
 
@@ -56,6 +96,13 @@ const menuItems = computed(() => {
       title: '用户管理',
       icon: User,
       path: '/admin/users',
+      roles: ['ADMIN'] // 仅管理员可见
+    },
+    {
+      index: 'admin-teacher-applies',
+      title: '教师申请管理',
+      icon: UserFilled,
+      path: '/admin/teacher-applies',
       roles: ['ADMIN'] // 仅管理员可见
     },
     {
@@ -73,9 +120,11 @@ const menuItems = computed(() => {
   
   if (userRole === 'ADMIN') {
     return [...filteredBaseMenus, ...adminMenus]
+  } else if (userRole === 'TEACHER') {
+    return [...filteredBaseMenus, ...teacherMenus]
+  } else {
+    return [...filteredBaseMenus, ...studentMenus]
   }
-  
-  return filteredBaseMenus
 })
 
 // 菜单点击处理

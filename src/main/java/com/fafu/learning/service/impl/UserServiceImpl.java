@@ -135,61 +135,54 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     public List<UserInfoVO> getAllUsers() {
-        // TODO: 实现获取所有用户逻辑
-        // List<User> users = list();
-        // return users.stream()
-        //     .map(user -> {
-        //         UserInfoVO vo = new UserInfoVO();
-        //         BeanUtils.copyProperties(user, vo);
-        //         return vo;
-        //     })
-        //     .collect(Collectors.toList());
-        return List.of();
+        List<User> users = list();
+        return users.stream()
+            .map(user -> {
+                UserInfoVO vo = new UserInfoVO();
+                BeanUtils.copyProperties(user, vo);
+                return vo;
+            })
+            .collect(java.util.stream.Collectors.toList());
     }
     
     @Override
     public void deleteUserById(Long id) {
-        // TODO: 实现删除用户逻辑
-        // User user = getById(id);
-        // if (user == null) {
-        //     throw new RuntimeException("用户不存在");
-        // }
-        // removeById(id);
+        User user = getById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        removeById(id);
     }
     
     @Override
     public UserInfoVO getUserById(Long id) {
-        // TODO: 实现根据ID获取用户详情逻辑
-        // User user = getById(id);
-        // if (user == null) {
-        //     throw new RuntimeException("用户不存在");
-        // }
-        // UserInfoVO userInfoVO = new UserInfoVO();
-        // BeanUtils.copyProperties(user, userInfoVO);
-        // return userInfoVO;
-        return null;
+        User user = getById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        UserInfoVO userInfoVO = new UserInfoVO();
+        BeanUtils.copyProperties(user, userInfoVO);
+        return userInfoVO;
     }
     
     @Override
     public void disableUser(Long id) {
-        // TODO: 实现禁用用户逻辑
-        // User user = getById(id);
-        // if (user == null) {
-        //     throw new RuntimeException("用户不存在");
-        // }
-        // user.setStatus(0);
-        // updateById(user);
+        User user = getById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setStatus(0);
+        updateById(user);
     }
     
     @Override
     public void enableUser(Long id) {
-        // TODO: 实现启用用户逻辑
-        // User user = getById(id);
-        // if (user == null) {
-        //     throw new RuntimeException("用户不存在");
-        // }
-        // user.setStatus(1);
-        // updateById(user);
+        User user = getById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setStatus(1);
+        updateById(user);
     }
     
     @Override

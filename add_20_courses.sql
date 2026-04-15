@@ -1,5 +1,5 @@
 -- 增加20条course表数据（符合现有表结构）
-INSERT INTO `course` (`id`, `category_id`, `teacher_id`, `title`, `introduction`, `cover_image`, `price`, `discount_price`, `lesson_count`, `student_count`, `rating`)
+NSERT INTO `course` (`id`, `category_id`, `teacher_id`, `title`, `introduction`, `cover_image`, `price`, `discount_price`, `lesson_count`, `student_count`, `rating`)
 VALUES
 -- 前端开发课程
 (4, 1, 1, 'JavaScript高级编程', '深入学习JavaScript高级特性，包括闭包、原型链、异步编程等', 'https://example.com/js-advanced.jpg', 129, 69, 22, 4567),

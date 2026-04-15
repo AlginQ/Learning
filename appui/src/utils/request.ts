@@ -7,7 +7,7 @@ class HttpRequest {
 
   constructor() {
     this.instance = axios.create({
-      baseURL: '/api',
+      baseURL: 'http://localhost:8989',
       timeout: 10000
     })
 

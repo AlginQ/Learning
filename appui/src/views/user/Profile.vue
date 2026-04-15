@@ -2,8 +2,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document, Upload, Refresh } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, ElDialog, ElForm, ElFormItem, ElInput, ElButton } from 'element-plus'
+import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document, Upload, Refresh, UserFilled } from '@element-plus/icons-vue'
 import { updateUserProfile, updateUserAvatar, changePassword } from '@/api/auth'
 
 const userStore = useUserStore()
@@ -11,6 +11,7 @@ const router = useRouter()
 const activeTab = ref('profile')
 const loading = ref(false)
 const avatarLoading = ref(false)
+const teacherApplyFormRef = ref()
 
 // 个人信息表单
 const profileForm = reactive({
@@ -32,6 +33,30 @@ const passwordForm = reactive({
   newPassword: '',
   confirmPassword: ''
 })
+
+// 教师申请表单
+const teacherApplyDialogVisible = ref(false)
+const teacherApplyForm = reactive({
+  realName: '',
+  major: '',
+  qualification: ''
+})
+
+const teacherApplyRules = {
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' },
+    { max: 50, message: '姓名长度不能超过50位', trigger: 'blur' }
+  ],
+  major: [
+    { required: true, message: '请输入专业', trigger: 'blur' },
+    { max: 100, message: '专业长度不能超过100位', trigger: 'blur' }
+  ],
+  qualification: [
+    { required: true, message: '请输入资质说明', trigger: 'blur' },
+    { min: 10, message: '资质说明至少10个字符', trigger: 'blur' },
+    { max: 500, message: '资质说明不能超过500个字符', trigger: 'blur' }
+  ]
+}
 
 // 表单验证规则
 const profileRules = {
@@ -164,6 +189,29 @@ const goToCollections = () => {
   router.push('/collections')
 }
 
+// 处理教师申请
+const handleTeacherApply = async (formEl: any) => {
+  if (!formEl) return
+  
+  try {
+    const valid = await formEl.validate()
+    if (valid) {
+      // 模拟API请求
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      ElMessage.success('申请已提交，等待管理员审核')
+      teacherApplyDialogVisible.value = false
+      // 重置表单
+      teacherApplyForm.realName = ''
+      teacherApplyForm.major = ''
+      teacherApplyForm.qualification = ''
+      formEl.resetFields()
+    }
+  } catch (error: any) {
+    ElMessage.error('申请提交失败')
+  }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   initFormData()
@@ -189,7 +237,18 @@ onMounted(() => {
                 </div>
               </div>
               <h3>{{ userStore.currentUser?.nickname || userStore.currentUser?.username }}</h3>
-              <p class="user-role">{{ userStore.currentUser?.role === 'ADMIN' ? '管理员' : '普通用户' }}</p>
+              <p class="user-role">{{ userStore.currentUser?.role === 'ADMIN' ? '管理员' : userStore.currentUser?.role === 'TEACHER' ? '教师' : '普通用户' }}</p>
+              
+              <!-- 申请成为教师按钮 -->
+              <el-button
+                v-if="userStore.currentUser?.role === 'USER'"
+                type="primary"
+                :icon="UserFilled"
+                @click="teacherApplyDialogVisible = true"
+                style="margin-top: 15px;"
+              >
+                申请成为教师
+              </el-button>
             </div>
             
             <div class="user-stats">
@@ -447,6 +506,48 @@ onMounted(() => {
         >
           <el-icon v-if="!avatarLoading"><Check /></el-icon>
           {{ avatarLoading ? '上传中...' : '确定' }}
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+  
+  <!-- 教师申请对话框 -->
+  <el-dialog
+    v-model="teacherApplyDialogVisible"
+    title="申请成为教师"
+    width="500px"
+    :close-on-click-modal="false"
+  >
+    <el-form
+      ref="teacherApplyFormRef"
+      :model="teacherApplyForm"
+      :rules="teacherApplyRules"
+      label-width="80px"
+      class="teacher-apply-form"
+    >
+      <el-form-item label="真实姓名" prop="realName">
+        <el-input v-model="teacherApplyForm.realName" placeholder="请输入真实姓名" />
+      </el-form-item>
+      <el-form-item label="专业" prop="major">
+        <el-input v-model="teacherApplyForm.major" placeholder="请输入专业" />
+      </el-form-item>
+      <el-form-item label="资质说明" prop="qualification">
+        <el-input
+          v-model="teacherApplyForm.qualification"
+          type="textarea"
+          :rows="4"
+          placeholder="请详细描述您的教学经验和专业资质"
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="teacherApplyDialogVisible = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          @click="handleTeacherApply(teacherApplyFormRef)"
+        >
+          提交申请
         </el-button>
       </span>
     </template>

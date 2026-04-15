@@ -32,12 +32,8 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<List<UserInfoVO>> getAllUsers() {
         try {
-            // TODO: 调用UserService获取所有用户列表
-            // List<UserInfoVO> users = userService.getAllUsers();
-            // return ApiResult.success(users);
-            
-            // 示例返回（实际应调用Service层）
-            return ApiResult.success("获取用户列表成功", List.of());
+            List<UserInfoVO> users = userService.getAllUsers();
+            return ApiResult.success(users);
         } catch (Exception e) {
             return ApiResult.fail("获取用户列表失败: " + e.getMessage());
         }
@@ -54,11 +50,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<Void> deleteUser(@PathVariable Long id) {
         try {
-            // TODO: 调用UserService删除用户
-            // userService.deleteUserById(id);
-            // return ApiResult.success("用户删除成功", null);
-            
-            // 示例返回（实际应调用Service层）
+            userService.deleteUserById(id);
             return ApiResult.success("用户删除成功", null);
         } catch (RuntimeException e) {
             return ApiResult.badRequest(e.getMessage());
@@ -78,12 +70,8 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<UserInfoVO> getUserById(@PathVariable Long id) {
         try {
-            // TODO: 调用UserService根据ID获取用户详情
-            // UserInfoVO user = userService.getUserById(id);
-            // return ApiResult.success(user);
-            
-            // 示例返回（实际应调用Service层）
-            return ApiResult.success("获取用户详情成功", null);
+            UserInfoVO user = userService.getUserById(id);
+            return ApiResult.success(user);
         } catch (RuntimeException e) {
             return ApiResult.badRequest(e.getMessage());
         } catch (Exception e) {
@@ -102,11 +90,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<Void> disableUser(@PathVariable Long id) {
         try {
-            // TODO: 调用UserService禁用用户
-            // userService.disableUser(id);
-            // return ApiResult.success("用户禁用成功", null);
-            
-            // 示例返回（实际应调用Service层）
+            userService.disableUser(id);
             return ApiResult.success("用户禁用成功", null);
         } catch (RuntimeException e) {
             return ApiResult.badRequest(e.getMessage());
@@ -126,11 +110,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<Void> enableUser(@PathVariable Long id) {
         try {
-            // TODO: 调用UserService启用用户
-            // userService.enableUser(id);
-            // return ApiResult.success("用户启用成功", null);
-            
-            // 示例返回（实际应调用Service层）
+            userService.enableUser(id);
             return ApiResult.success("用户启用成功", null);
         } catch (RuntimeException e) {
             return ApiResult.badRequest(e.getMessage());

@@ -90,6 +90,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
+        path: 'teacher-applies',
+        name: 'TeacherApplyManagement',
+        component: () => import('@/views/admin/TeacherApplyManagement.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
         path: 'courses',
         name: 'CourseManagement',
         component: () => import('@/views/admin/CourseManagement.vue'),
@@ -107,6 +113,31 @@ const routes: Array<RouteRecordRaw> = [
     path: '/permission-demo',
     name: 'PermissionDemo',
     component: () => import('@/views/PermissionDemo.vue'),
+    meta: { requiresAuth: true }
+  },
+  // 教师中心路由
+  {
+    path: '/teacher',
+    name: 'TeacherCenter',
+    component: () => import('@/views/teacher/TeacherCenter.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/teacher/courses',
+    name: 'TeacherCourses',
+    component: () => import('@/views/teacher/TeacherCourses.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/teacher/courses/create',
+    name: 'CreateCourse',
+    component: () => import('@/views/teacher/CreateCourse.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/teacher/courses/:id/edit',
+    name: 'EditCourse',
+    component: () => import('@/views/teacher/EditCourse.vue'),
     meta: { requiresAuth: true }
   }
 ]
@@ -138,7 +169,17 @@ router.beforeEach((to, from, next) => {
     // 检查用户角色是否为ADMIN
     if (userRole !== 'ADMIN') {
       ElMessage.error('无管理员权限')
-      next('/login')
+      next('/')
+      return
+    }
+  }
+  
+  // 对 /teacher/** 路径做权限校验
+  if (to.path.startsWith('/teacher')) {
+    // 检查用户角色是否为TEACHER
+    if (userRole !== 'TEACHER') {
+      ElMessage.error('无教师权限')
+      next('/')
       return
     }
   }
@@ -146,7 +187,7 @@ router.beforeEach((to, from, next) => {
   // 检查路由元信息中的管理员权限要求
   if (to.meta.requiresAdmin && userRole !== 'ADMIN') {
     ElMessage.error('无管理员权限')
-    next('/login')
+    next('/')
     return
   }
   

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Edit, Delete, Plus } from '@element-plus/icons-vue'
@@ -53,6 +53,31 @@ watch(
   }
 )
 
+// 搜索教师
+const handleSearch = () => {
+  loadTeachers()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  searchKeyword.value = ''
+  loadTeachers()
+}
+
+// 过滤教师列表
+const filteredTeachers = computed(() => {
+  if (!searchKeyword.value) {
+    return teachers.value
+  }
+  const keyword = searchKeyword.value.toLowerCase()
+  return teachers.value.filter(teacher => 
+    (teacher.username || '').toLowerCase().includes(keyword) ||
+    (teacher.realName || '').toLowerCase().includes(keyword) ||
+    (teacher.title || '').toLowerCase().includes(keyword) ||
+    (teacher.specialty || '').toLowerCase().includes(keyword)
+  )
+})
+
 onMounted(() => {
   loadTeachers()
 })
@@ -60,10 +85,6 @@ onMounted(() => {
 
 <template>
   <div class="teacher-management">
-    <div class="page-header">
-      <h1>教师管理</h1>
-      <p>管理系统中的所有教师</p>
-    </div>
     
     <el-card class="search-card">
       <el-row :gutter="20">
@@ -79,15 +100,15 @@ onMounted(() => {
           </el-input>
         </el-col>
         <el-col :span="16">
-          <el-button type="primary">搜索</el-button>
-          <el-button @click="loadTeachers">刷新</el-button>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetSearch">重置</el-button>
         </el-col>
       </el-row>
     </el-card>
     
     <el-card class="table-card">
       <el-table
-        :data="teachers"
+        :data="filteredTeachers"
         v-loading="loading"
         stripe
         style="width: 100%"

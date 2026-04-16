@@ -15,12 +15,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JWT认证过滤器
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -55,18 +59,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         String username = jwtUtil.getUsernameFromToken(token);
                         Long userId = jwtUtil.getUserIdFromToken(token);
                         
-                        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                            // 加载用户详情（包含角色信息）
-                            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                            
-                            // 创建认证对象，包含用户角色权限
-                            UsernamePasswordAuthenticationToken authentication = 
-                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                            
-                            // 设置安全上下文
-                            SecurityContextHolder.getContext().setAuthentication(authentication);
-                        }
+                        // 加载用户详情（包含角色信息）
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                        
+                        // 创建认证对象，包含用户角色权限
+                        UsernamePasswordAuthenticationToken authentication = 
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        
+                        // 设置安全上下文
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
                         
                         // 将用户ID设置到请求属性中，供后续控制器使用
                         if (userId != null) {

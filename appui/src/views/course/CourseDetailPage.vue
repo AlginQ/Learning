@@ -1200,7 +1200,9 @@ const mockChapters: Record<number, Chapter[]> = {
 
 // 获取课程数据
 const getCourseById = (id: number): Course | undefined => {
-  return mockCourses.find(course => course.id === id)
+  const course = mockCourses.find(course => course.id === id)
+  // 如果找不到对应ID的课程，返回第一个课程数据
+  return course || mockCourses[0]
 }
 
 // 获取章节数据

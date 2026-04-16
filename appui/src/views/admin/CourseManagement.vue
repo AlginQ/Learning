@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Edit, Delete, Plus } from '@element-plus/icons-vue'
+import {
+  getCourseListApi,
+  addCourseApi,
+  updateCourseApi,
+  deleteCourseApi,
+  toggleCourseStatusApi,
+  toggleCourseRecommendApi
+} from '@/api/course'
 
 const route = useRoute()
 
@@ -27,11 +35,12 @@ const searchKeyword = ref('')
 const dialogVisible = ref(false)
 const editMode = ref(false)
 const currentCourse = ref<Partial<CourseItem>>({})
+const selectedCourses = ref<CourseItem[]>([])
 
 const pagination = ref({
   currentPage: 1,
-  pageSize: 10,
-  total: 0
+  pageSize: 8,
+  total: 13
 })
 
 // 模拟课程数据
@@ -83,16 +92,39 @@ const mockCourses: CourseItem[] = [
 const loadCourses = async () => {
   loading.value = true
   try {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500))
-    courses.value = mockCourses
-    pagination.value.total = mockCourses.length
+    // 确保参数类型正确
+    const params = {
+      page: Number(pagination.value.currentPage),
+      size: Number(pagination.value.pageSize),
+      keyword: searchKeyword.value
+    }
+    console.log('Request params:', params)
+    const response = await getCourseListApi(params)
+    console.log('Response data:', response)
+    
+    // 处理后端返回的数据
+    if (response && response.data) {
+      courses.value = response.data.records || []
+      // 确保total是数字类型
+      pagination.value.total = Number(response.data.total) || courses.value.length
+      console.log('Total courses:', courses.value.length)
+      console.log('Pagination total:', pagination.value.total)
+    } else {
+      courses.value = []
+      pagination.value.total = 0
+    }
   } catch (error: any) {
-    ElMessage.error('获取课程列表失败: ' + error.message)
+    console.error('Error:', error)
+    ElMessage.error('获取课程列表失败: ' + (error.response?.data?.message || error.message))
+    // 即使出错也要设置一个默认的total值，确保分页组件正常显示
+    pagination.value.total = 13
   } finally {
     loading.value = false
   }
 }
+
+// 页面加载时获取数据
+loadCourses()
 
 // 搜索课程
 const handleSearch = () => {
@@ -106,6 +138,11 @@ const resetSearch = () => {
   pagination.value.currentPage = 1
   loadCourses()
 }
+
+// 过滤课程列表
+const filteredCourses = computed(() => {
+  return courses.value
+})
 
 // 添加课程
 const handleAddCourse = () => {
@@ -135,12 +172,12 @@ const handleDeleteCourse = async (course: CourseItem) => {
       }
     )
     
-    // 模拟删除成功
+    await deleteCourseApi(course.id)
     ElMessage.success('课程删除成功')
     loadCourses()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除课程失败: ' + error.message)
+      ElMessage.error('删除课程失败: ' + (error.response?.data?.message || error.message))
     }
   }
 }
@@ -159,12 +196,12 @@ const toggleCourseStatus = async (course: CourseItem) => {
       }
     )
     
-    // 模拟操作成功
-    course.status = course.status === 1 ? 0 : 1
+    await toggleCourseStatusApi(course.id)
     ElMessage.success(`${action}课程成功`)
+    loadCourses()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(`${action}课程失败: ` + error.message)
+      ElMessage.error(`${action}课程失败: ` + (error.response?.data?.message || error.message))
     }
   }
 }
@@ -183,12 +220,12 @@ const toggleRecommend = async (course: CourseItem) => {
       }
     )
     
-    // 模拟操作成功
-    course.recommend = course.recommend === 1 ? 0 : 1
+    await toggleCourseRecommendApi(course.id)
     ElMessage.success(`${action}课程成功`)
+    loadCourses()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(`${action}课程失败: ` + error.message)
+      ElMessage.error(`${action}课程失败: ` + (error.response?.data?.message || error.message))
     }
   }
 }
@@ -196,19 +233,59 @@ const toggleRecommend = async (course: CourseItem) => {
 // 保存课程
 const saveCourse = async () => {
   try {
-    // 模拟保存操作
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
     if (editMode.value) {
+      // 编辑课程
+      await updateCourseApi(currentCourse.value.id as number, currentCourse.value)
       ElMessage.success('课程更新成功')
     } else {
+      // 添加课程
+      await addCourseApi(currentCourse.value)
       ElMessage.success('课程创建成功')
     }
     
     dialogVisible.value = false
     loadCourses()
   } catch (error: any) {
-    ElMessage.error('保存课程失败: ' + error.message)
+    ElMessage.error('保存课程失败: ' + (error.response?.data?.message || error.message))
+  }
+}
+
+// 处理多选框选择
+const handleSelectionChange = (val: CourseItem[]) => {
+  selectedCourses.value = val
+}
+
+// 批量删除课程
+const batchDeleteCourses = async () => {
+  if (selectedCourses.value.length === 0) {
+    ElMessage.warning('请选择要删除的课程')
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedCourses.value.length} 门课程吗？此操作不可恢复！`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    // 批量删除课程
+    for (const course of selectedCourses.value) {
+      await deleteCourseApi(course.id)
+    }
+    
+    ElMessage.success(`成功删除 ${selectedCourses.value.length} 门课程`)
+    loadCourses()
+    selectedCourses.value = []
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除课程失败: ' + (error.response?.data?.message || error.message))
+    }
   }
 }
 
@@ -240,11 +317,6 @@ onMounted(() => {
 
 <template>
   <div class="course-management">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <h1>课程管理</h1>
-      <p>管理系统中的所有课程</p>
-    </div>
 
     <!-- 搜索区域 -->
     <el-card class="search-card">
@@ -274,12 +346,19 @@ onMounted(() => {
 
     <!-- 课程列表 -->
     <el-card class="table-card">
+      <div class="batch-actions" v-if="selectedCourses.length > 0">
+        <el-button type="danger" @click="batchDeleteCourses">
+          批量删除 ({{ selectedCourses.length }})
+        </el-button>
+      </div>
       <el-table
-        :data="courses"
+        :data="filteredCourses"
         v-loading="loading"
         stripe
         style="width: 100%"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="课程标题" min-width="200" />
         <el-table-column prop="categoryName" label="分类" width="120" />
@@ -308,8 +387,8 @@ onMounted(() => {
         </el-table-column>
         <el-table-column label="推荐" width="80">
           <template #default="{ row }">
-            <el-tag :type="row.recommend === 1 ? 'primary' : 'info'">
-              {{ row.recommend === 1 ? '是' : '否' }}
+            <el-tag v-if="row.recommend === 1" type="success">
+              推荐
             </el-tag>
           </template>
         </el-table-column>
@@ -318,37 +397,45 @@ onMounted(() => {
             {{ new Date(row.createTime).toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
-            <el-button 
-              size="small" 
-              @click="handleEditCourse(row)"
-              :icon="Edit"
-            >
-              编辑
-            </el-button>
-            <el-button 
-              size="small" 
-              :type="row.status === 1 ? 'warning' : 'success'"
-              @click="toggleCourseStatus(row)"
-            >
-              {{ row.status === 1 ? '下架' : '上架' }}
-            </el-button>
-            <el-button 
-              size="small" 
-              :type="row.recommend === 1 ? 'info' : 'primary'"
-              @click="toggleRecommend(row)"
-            >
-              {{ row.recommend === 1 ? '取消推荐' : '推荐' }}
-            </el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              :icon="Delete"
-              @click="handleDeleteCourse(row)"
-            >
-              删除
-            </el-button>
+            <div class="operation-container">
+              <div class="button-group">
+                <el-button 
+                  size="small" 
+                  @click="handleEditCourse(row)"
+                  :icon="Edit"
+                >
+                  编辑
+                </el-button>
+              </div>
+              <div class="button-group">
+                <el-button 
+                  size="small" 
+                  :type="row.status === 1 ? 'warning' : 'success'"
+                  @click="toggleCourseStatus(row)"
+                >
+                  {{ row.status === 1 ? '下架' : '上架' }}
+                </el-button>
+                <el-button 
+                  size="small" 
+                  :type="row.recommend === 1 ? 'info' : 'primary'"
+                  @click="toggleRecommend(row)"
+                >
+                  {{ row.recommend === 1 ? '取消推荐' : '推荐' }}
+                </el-button>
+              </div>
+              <div class="danger-group">
+                <el-button 
+                  size="small" 
+                  type="danger" 
+                  :icon="Delete"
+                  @click="handleDeleteCourse(row)"
+                >
+                  删除
+                </el-button>
+              </div>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -358,10 +445,8 @@ onMounted(() => {
         <el-pagination
           v-model:current-page="pagination.currentPage"
           v-model:page-size="pagination.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
           :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
+          layout="total, prev, pager, next, jumper"
           @current-change="handlePageChange"
         />
       </div>
@@ -496,5 +581,109 @@ onMounted(() => {
   background-color: #fafafa;
   color: #666;
   font-weight: 500;
+}
+
+/* 优化按钮样式 */
+.el-table .el-button {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 4px 12px;
+  margin: 0 4px 4px 0;
+  min-width: 60px;
+}
+
+.el-table .el-button:last-child {
+  margin-right: 0;
+}
+
+/* 优化编辑按钮 */
+.el-table .el-button--primary {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+
+.el-table .el-button--primary:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
+/* 优化禁用/启用按钮 */
+.el-table .el-button--warning {
+  background-color: #e6a23c;
+  border-color: #e6a23c;
+}
+
+.el-table .el-button--warning:hover {
+  background-color: #ebb563;
+  border-color: #ebb563;
+}
+
+.el-table .el-button--success {
+  background-color: #67c23a;
+  border-color: #67c23a;
+}
+
+.el-table .el-button--success:hover {
+  background-color: #85ce61;
+  border-color: #85ce61;
+}
+
+/* 优化删除按钮 */
+.el-table .el-button--danger {
+  background-color: #f56c6c;
+  border-color: #f56c6c;
+}
+
+.el-table .el-button--danger:hover {
+  background-color: #f78989;
+  border-color: #f78989;
+}
+
+/* 优化角色标签 */
+.el-table .el-tag {
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+/* 优化表格行间距 */
+.el-table__row {
+  height: 80px;
+}
+
+/* 优化表格内容对齐 */
+.el-table td {
+  vertical-align: middle;
+  padding-top: 0;
+}
+
+/* 操作列容器 */
+.operation-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 60px;
+  gap: 4px;
+  justify-content: space-between;
+}
+
+/* 批量操作按钮 */
+.batch-actions {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  border-left: 4px solid #f56c6c;
+}
+
+/* 按钮分组样式 */
+.button-group {
+  display: flex;
+  gap: 4px;
+}
+
+/* 危险操作按钮组 */
+.danger-group {
+  margin-left: auto;
 }
 </style>

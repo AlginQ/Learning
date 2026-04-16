@@ -46,6 +46,7 @@ const carouselItems = ref([
 // 权限判断
 const isAdmin = computed(() => userStore.isLogin)
 const isCurrentUserAdmin = computed(() => checkIsAdmin())
+const isCurrentUserTeacher = computed(() => userStore.currentUser?.role === 'TEACHER')
 
 const handleSelect = (key: string) => {
   switch (key) {
@@ -77,6 +78,13 @@ const handleSelect = (key: string) => {
       }
       break
     case '6':
+      if (isCurrentUserTeacher.value) {
+        router.push('/teacher')
+      } else {
+        router.push('/')
+      }
+      break
+    case '7':
       if (isCurrentUserAdmin.value) {
         router.push('/admin/users')
       } else {
@@ -266,7 +274,8 @@ onMounted(() => {
               <el-menu-item v-if="isAdmin" index="3">我的课程</el-menu-item>
               <el-menu-item v-if="isAdmin" index="4">学习记录</el-menu-item>
               <el-menu-item v-if="isAdmin" index="5">我的笔记</el-menu-item>
-              <el-menu-item v-if="isAdmin && isCurrentUserAdmin" index="6">管理中心</el-menu-item>
+              <el-menu-item v-if="isAdmin && isCurrentUserTeacher" index="6">教师中心</el-menu-item>
+              <el-menu-item v-if="isAdmin && isCurrentUserAdmin" index="7">管理中心</el-menu-item>
             </el-menu>
         </div>
 

@@ -31,3 +31,28 @@ export const getCourseLessonsApi = (courseId: number) => {
 export const getTeacherListApi = () => {
   return request.get<ApiResponse<any[]>>('/api/teachers')
 }
+
+// 添加课程
+export const addCourseApi = (course: any) => {
+  return request.post<ApiResponse<any>>('/api/courses', course)
+}
+
+// 编辑课程
+export const updateCourseApi = (id: number, course: any) => {
+  return request.put<ApiResponse<any>>(`/api/courses/${id}`, course)
+}
+
+// 删除课程
+export const deleteCourseApi = (id: number) => {
+  return request.delete<ApiResponse<null>>(`/api/courses/${id}`)
+}
+
+// 切换课程状态
+export const toggleCourseStatusApi = (id: number) => {
+  return request.put<ApiResponse<any>>(`/api/courses/${id}/status`)
+}
+
+// 切换课程推荐状态
+export const toggleCourseRecommendApi = (id: number) => {
+  return request.put<ApiResponse<any>>(`/api/courses/${id}/recommend`)
+}

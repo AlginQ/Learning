@@ -18,22 +18,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Register',
     component: () => import('@/views/auth/Register.vue')
   },
-  {
-    path: '/courses',
-    name: 'Courses',
-    component: () => import('@/views/course/CourseList.vue')
-  },
-  {
-    path: '/course/:id',
-    name: 'CourseDetail',
-    component: () => import('@/views/course/CourseDetail.vue')
-  },
-  {
-    path: '/course-detail/:id',
-    name: 'CourseDetailPage',
-    component: () => import('@/views/course/CourseDetailPage.vue'),
-    meta: { requiresAuth: true }
-  },
+  {    path: '/courses',    name: 'Courses',    component: () => import('@/views/course/CourseList.vue')  },  {    path: '/course/:id',    name: 'CourseDetail',    component: () => import('@/views/course/CourseDetail.vue')  },  {    path: '/course_detail/:id',    name: 'CourseDetailOld',    component: () => import('@/views/course/CourseDetail.vue')  },  {    path: '/course-detail/:id',    name: 'CourseDetailPage',    component: () => import('@/views/course/CourseDetailPage.vue'),    meta: { requiresAuth: true }  },
   {
     path: '/course/play/:id',
     name: 'CoursePlay',

@@ -238,6 +238,12 @@ const toggleCollapse = () => {
                 <el-dropdown-item @click="openInNewWindow('/profile')">
                   <el-icon><User /></el-icon>个人中心
                 </el-dropdown-item>
+                <el-dropdown-item v-if="userStore.currentUser?.role === 'TEACHER'" @click="$router.push('/teacher')">
+                  <el-icon><UserFilled /></el-icon>教师中心
+                </el-dropdown-item>
+                <el-dropdown-item @click="$router.push('/notes')">
+                  <el-icon><DataAnalysis /></el-icon>我的笔记
+                </el-dropdown-item>
                 <el-dropdown-item @click="$router.push('/change-password')">
                   <el-icon><Setting /></el-icon>修改密码
                 </el-dropdown-item>

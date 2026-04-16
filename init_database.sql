@@ -5,6 +5,36 @@ CREATE DATABASE IF NOT EXISTS online_study CHARACTER SET utf8mb4 COLLATE utf8mb4
 
 USE online_study;
 
+-- 创建笔记表
+CREATE TABLE IF NOT EXISTS `note` (
+                `id` bigint NOT NULL AUTO_INCREMENT COMMENT '笔记ID',
+                `user_id` bigint NOT NULL COMMENT '用户ID',
+                `course_id` bigint NOT NULL COMMENT '课程ID',
+                `lesson_id` bigint NOT NULL COMMENT '课时ID',
+                `title` varchar(255) NOT NULL COMMENT '笔记标题',
+                 `content` text NOT NULL COMMENT '笔记内容',
+                `type` int NOT NULL DEFAULT 0 COMMENT '笔记类型：0-课程笔记，1-通用笔记',
+                `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                PRIMARY KEY (`id`),
+                KEY `idx_user_id` (`user_id`),
+                 KEY `idx_course_id` (`course_id`),
+                KEY `idx_lesson_id` (`lesson_id`),
+                CONSTRAINT `fk_note_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+                CONSTRAINT `fk_note_course` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE CASCADE,
+                CONSTRAINT `fk_note_lesson` FOREIGN KEY (`lesson_id`) REFERENCES `lesson` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='笔记表';
+
+ALTER TABLE `note`
+    MODIFY COLUMN `course_id` BIGINT(20) NOT NULL DEFAULT 1 COMMENT '课程ID',
+    MODIFY COLUMN `lesson_id` BIGINT(20) NOT NULL DEFAULT 1 COMMENT '课时ID';
+
+
+-- 移除note表的外键约束
+ALTER TABLE `note` DROP FOREIGN KEY `fk_note_user`;
+ALTER TABLE `note` DROP FOREIGN KEY `fk_note_course`;
+ALTER TABLE `note` DROP FOREIGN KEY `fk_note_lesson`;
+
 -- 创建用户表
 CREATE TABLE IF NOT EXISTS `user` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',

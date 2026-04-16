@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Check, Close, UserFilled } from '@element-plus/icons-vue'
 import { getPendingTeacherAppliesApi, reviewTeacherApplyApi } from '@/api/admin'
@@ -78,6 +78,30 @@ const handleTeacherApply = async (apply: TeacherApplyItem, status: number) => {
   }
 }
 
+// 搜索申请
+const handleSearch = () => {
+  loadTeacherApplies()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  searchKeyword.value = ''
+  loadTeacherApplies()
+}
+
+// 过滤申请列表
+const filteredApplies = computed(() => {
+  if (!searchKeyword.value) {
+    return teacherApplies.value
+  }
+  const keyword = searchKeyword.value.toLowerCase()
+  return teacherApplies.value.filter(apply => 
+    (apply.user?.username || '').toLowerCase().includes(keyword) ||
+    (apply.realName || '').toLowerCase().includes(keyword) ||
+    (apply.major || '').toLowerCase().includes(keyword)
+  )
+})
+
 onMounted(() => {
   loadTeacherApplies()
 })
@@ -85,10 +109,6 @@ onMounted(() => {
 
 <template>
   <div class="teacher-apply-management">
-    <div class="page-header">
-      <h1>教师申请管理</h1>
-      <p>管理用户的教师申请</p>
-    </div>
     
     <el-card class="search-card">
       <el-row :gutter="20">
@@ -104,15 +124,15 @@ onMounted(() => {
           </el-input>
         </el-col>
         <el-col :span="16">
-          <el-button type="primary">搜索</el-button>
-          <el-button @click="loadTeacherApplies">刷新</el-button>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetSearch">重置</el-button>
         </el-col>
       </el-row>
     </el-card>
     
     <el-card class="table-card">
       <el-table
-        :data="teacherApplies"
+        :data="filteredApplies"
         v-loading="loadingApplies"
         stripe
         style="width: 100%"

@@ -35,7 +35,7 @@
               v-for="chapter in chapters" 
               :key="chapter.id"
               :title="chapter.title"
-              :name="chapter.id"
+              :name="chapter.id.toString()"
             >
               <div class="lesson-list">
                 <div 
@@ -163,13 +163,16 @@ const startLesson = (lesson: any) => {
 }
 
 onMounted(() => {
+  console.log('Course ID:', courseId)
   // 模拟 API 调用
   setTimeout(() => {
     course.value = mockCourse
     chapters.value = mockChapters
     if (mockChapters.length > 0) {
-      activeChapter.value = mockChapters[0].id
+      activeChapter.value = mockChapters[0].id.toString()
     }
+    console.log('Course data:', course.value)
+    console.log('Chapters data:', chapters.value)
   }, 1000)
 })
 </script>

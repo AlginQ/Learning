@@ -12,6 +12,7 @@ export interface ApiPageResponse<T> {
     records: T[]
     total: number
     current: number
+    size: number
     pages: number
   }
   msg: string

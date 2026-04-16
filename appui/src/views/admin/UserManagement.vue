@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Edit, Delete, Plus } from '@element-plus/icons-vue'
-import { getAllUsersApi, disableUserApi, enableUserApi, deleteUserApi, updateUserRoleApi } from '@/api/admin'
+import { Search, Edit, Delete, Plus, Refresh } from '@element-plus/icons-vue'
+import {
+  getAllUsersApi,
+  deleteUserApi,
+  disableUserApi,
+  enableUserApi,
+  updateUserRoleApi,
+  addUserApi,
+  updateUserApi
+} from '@/api/admin'
 
 const route = useRoute()
 
@@ -131,6 +139,67 @@ const deleteUser = async (user: UserItem) => {
   }
 }
 
+// 搜索用户
+const handleSearch = () => {
+  loadUsers()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  searchKeyword.value = ''
+  loadUsers()
+}
+
+// 过滤用户列表
+const filteredUsers = computed(() => {
+  if (!searchKeyword.value) {
+    return users.value
+  }
+  const keyword = searchKeyword.value.toLowerCase()
+  return users.value.filter(user => 
+    user.username.toLowerCase().includes(keyword) ||
+    user.email.toLowerCase().includes(keyword) ||
+    user.nickname.toLowerCase().includes(keyword)
+  )
+})
+
+// 打开添加用户对话框
+const openAddUserDialog = () => {
+  editMode.value = false
+  currentUser.value = {
+    status: 1,
+    role: 'USER'
+  }
+  dialogVisible.value = true
+}
+
+// 打开编辑用户对话框
+const openEditUserDialog = (user: UserItem) => {
+  editMode.value = true
+  currentUser.value = { ...user }
+  dialogVisible.value = true
+}
+
+// 保存用户
+const saveUser = async () => {
+  try {
+    if (editMode.value) {
+      // 编辑用户
+      await updateUserApi(currentUser.value.id, currentUser.value)
+      ElMessage.success('用户更新成功')
+    } else {
+      // 添加用户
+      await addUserApi(currentUser.value)
+      ElMessage.success('用户创建成功')
+    }
+    
+    dialogVisible.value = false
+    loadUsers()
+  } catch (error: any) {
+    ElMessage.error('保存用户失败: ' + (error.response?.data?.message || error.message))
+  }
+}
+
 // 监听路由变化
 watch(
   () => route.fullPath,
@@ -146,10 +215,6 @@ onMounted(() => {
 
 <template>
   <div class="user-management">
-    <div class="page-header">
-      <h1>用户管理</h1>
-      <p>管理系统中的所有用户</p>
-    </div>
     
     <el-card class="search-card">
       <el-row :gutter="20">
@@ -165,9 +230,9 @@ onMounted(() => {
           </el-input>
         </el-col>
         <el-col :span="16">
-          <el-button type="primary">搜索</el-button>
-          <el-button @click="loadUsers">刷新</el-button>
-          <el-button type="success" :icon="Plus">
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetSearch">重置</el-button>
+          <el-button type="success" :icon="Plus" @click="openAddUserDialog">
             添加用户
           </el-button>
         </el-col>
@@ -176,7 +241,7 @@ onMounted(() => {
     
     <el-card class="table-card">
       <el-table
-        :data="users"
+        :data="filteredUsers"
         v-loading="loading"
         stripe
         style="width: 100%"
@@ -207,7 +272,7 @@ onMounted(() => {
         <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <div class="operation-container">
-              <el-button size="small" :icon="Edit">编辑</el-button>
+              <el-button size="small" :icon="Edit" @click="openEditUserDialog(row)">编辑</el-button>
               <el-button 
                 size="small" 
                 :type="row.status === 1 ? 'warning' : 'success'"
@@ -236,6 +301,56 @@ onMounted(() => {
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 用户编辑对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="editMode ? '编辑用户' : '添加用户'"
+      width="600px"
+    >
+      <el-form :model="currentUser" label-width="100px">
+        <el-form-item label="用户名" required :rules="[
+          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { min: 4, max: 20, message: '用户名长度为4-20位', trigger: 'blur' },
+          {
+            pattern: /^[a-zA-Z0-9_]+$/,
+            message: '用户名只能包含字母、数字和下划线',
+            trigger: 'blur'
+          }
+        ]">
+          <el-input v-model="currentUser.username" placeholder="请输入用户名" :disabled="editMode" />
+        </el-form-item>
+        <el-form-item label="邮箱" required>
+          <el-input v-model="currentUser.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="昵称" required>
+          <el-input v-model="currentUser.nickname" placeholder="请输入昵称" />
+        </el-form-item>
+        <el-form-item label="角色" required>
+          <el-select v-model="currentUser.role" placeholder="请选择角色">
+            <el-option label="普通用户" value="USER" />
+            <el-option label="教师" value="TEACHER" />
+            <el-option label="管理员" value="ADMIN" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-switch
+            v-model="currentUser.status"
+            :active-value="1"
+            :inactive-value="0"
+            active-text="正常"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveUser">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

@@ -33,6 +33,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional
     public UserInfoVO register(UserRegisterDTO registerDTO) {
+        // 检查用户名是否符合规则
+        if (!registerDTO.getUsername().matches("^[a-zA-Z0-9_]{4,20}$")) {
+            throw new RuntimeException("用户名只能包含字母、数字和下划线，长度4-20位");
+        }
+        
+        // 检查密码是否符合规则
+        String password = registerDTO.getPassword();
+        if (password.length() < 6 || password.length() > 20) {
+            throw new RuntimeException("密码长度必须为6-20位");
+        }
+        if (password.matches("^[\\u4e00-\\u9fa5]+$") || password.contains(" ")) {
+            throw new RuntimeException("密码不允许包含中文和空格");
+        }
+        if (password.matches("^[a-zA-Z]+$")) {
+            throw new RuntimeException("密码不允许纯字母");
+        }
+        
         // 检查用户名是否已存在
         if (getByUsername(registerDTO.getUsername()) != null) {
             throw new RuntimeException("用户名已存在");
@@ -258,6 +275,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 验证旧密码
         if (!PasswordUtil.matches(oldPassword, user.getPassword())) {
             throw new RuntimeException("原密码错误");
+        }
+        
+        // 检查新密码是否符合规则
+        if (newPassword.length() < 6 || newPassword.length() > 20) {
+            throw new RuntimeException("密码长度必须为6-20位");
+        }
+        if (newPassword.matches("^[\\u4e00-\\u9fa5]+$") || newPassword.contains(" ")) {
+            throw new RuntimeException("密码不允许包含中文和空格");
+        }
+        if (newPassword.matches("^[a-zA-Z]+$")) {
+            throw new RuntimeException("密码不允许纯字母");
         }
         
         // 更新密码

@@ -22,7 +22,12 @@ const registerForm = reactive({
 const registerRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度为3-20位', trigger: 'blur' }
+    { min: 4, max: 20, message: '用户名长度为4-20位', trigger: 'blur' },
+    {
+      pattern: /^[a-zA-Z0-9_]+$/,
+      message: '用户名只能包含字母、数字和下划线',
+      trigger: 'blur'
+    }
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -30,7 +35,22 @@ const registerRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
+    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' },
+    {
+      pattern: /^[^\u4e00-\u9fa5\s]+$/,
+      message: '密码不允许包含中文和空格',
+      trigger: 'blur'
+    },
+    {
+      validator: (rule: any, value: string, callback: any) => {
+        if (/^[a-zA-Z]+$/.test(value)) {
+          callback(new Error('密码不允许纯字母'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },

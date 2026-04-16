@@ -45,3 +45,13 @@ export const getAllTeachersApi = () => {
 export const updateUserRoleApi = (id: number, role: string) => {
   return request.put<ApiResponse<null>>(`/api/admin/users/${id}/role?role=${role}`)
 }
+
+// 添加用户
+export const addUserApi = (user: any) => {
+  return request.post<ApiResponse<any>>('/api/admin/users', user)
+}
+
+// 编辑用户
+export const updateUserApi = (id: number, user: any) => {
+  return request.put<ApiResponse<any>>(`/api/admin/users/${id}`, user)
+}

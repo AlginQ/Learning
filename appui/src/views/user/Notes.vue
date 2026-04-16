@@ -1,56 +1,27 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Delete, Search } from '@element-plus/icons-vue'
+import type { Note } from '@/types/note'
+import { getNotesApi, createNoteApi, updateNoteApi, deleteNoteApi } from '@/api/note'
 
 const userStore = useUserStore()
 const activeTab = ref('notes')
 const loading = ref(false)
 const dialogVisible = ref(false)
+const searchKeyword = ref('')
 
-// 模拟笔记数据
-const notes = ref([
-  {
-    id: 1,
-    courseId: 1,
-    courseTitle: 'Java基础教程',
-    lessonId: 1,
-    lessonTitle: 'Java环境搭建',
-    title: 'Java环境配置要点',
-    content: 'JDK安装需要注意版本兼容性，建议使用LTS版本。配置环境变量时要注意PATH的顺序。',
-    createdAt: '2024-01-15 14:30:00',
-    updatedAt: '2024-01-15 14:30:00'
-  },
-  {
-    id: 2,
-    courseId: 1,
-    courseTitle: 'Java基础教程',
-    lessonId: 2,
-    lessonTitle: '变量和数据类型',
-    title: '数据类型转换注意事项',
-    content: '自动类型转换遵循从小到大的原则，强制类型转换可能会丢失精度，需要特别注意。',
-    createdAt: '2024-01-15 10:15:00',
-    updatedAt: '2024-01-15 10:15:00'
-  },
-  {
-    id: 3,
-    courseId: 2,
-    courseTitle: 'Vue 3从入门到实战',
-    lessonId: 1,
-    lessonTitle: 'Vue 3简介',
-    title: 'Vue 3新特性总结',
-    content: 'Composition API提供了更好的逻辑复用能力，性能优化显著，Teleport组件很实用。',
-    createdAt: '2024-01-14 16:20:00',
-    updatedAt: '2024-01-14 16:20:00'
-  }
-])
+// 笔记数据
+const notes = ref<Note[]>([])
 
 const noteForm = reactive({
+  id: undefined,
   title: '',
   content: '',
-  courseId: null,
-  lessonId: null
+  courseId: 25, // 使用实际存在的课程ID
+  lessonId: 9, // 使用实际存在的课时ID
+  type: 0
 })
 
 const formRules = {
@@ -65,63 +36,95 @@ const formRules = {
 
 const formRef = ref()
 
+// 加载笔记列表
+const loadNotes = async () => {
+  loading.value = true
+  try {
+    const params: { courseId?: number; keyword?: string } = {}
+    if (searchKeyword.value) {
+      params.keyword = searchKeyword.value
+    }
+    
+    const response = await getNotesApi(params)
+    notes.value = response.data
+  } catch (error: any) {
+    ElMessage.error('获取笔记列表失败: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+// 新增笔记
 const handleAddNote = () => {
   dialogVisible.value = true
   // 重置表单
   Object.assign(noteForm, {
+    id: undefined,
     title: '',
     content: '',
     courseId: null,
-    lessonId: null
+    lessonId: null,
+    type: 0
   })
 }
 
-const handleEditNote = (note: any) => {
+// 编辑笔记
+const handleEditNote = (note: Note) => {
   dialogVisible.value = true
   Object.assign(noteForm, {
-    ...note
+    id: note.id,
+    title: note.title,
+    content: note.content,
+    courseId: note.courseId,
+    lessonId: note.lessonId,
+    type: note.type
   })
 }
 
+// 删除笔记
 const handleDeleteNote = (id: number) => {
   ElMessageBox.confirm('确定要删除这条笔记吗？', '提示', {
     type: 'warning'
-  }).then(() => {
-    notes.value = notes.value.filter(note => note.id !== id)
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    loading.value = true
+    try {
+      await deleteNoteApi(id)
+      notes.value = notes.value.filter(note => note.id !== id)
+      ElMessage.success('删除成功')
+    } catch (error: any) {
+      ElMessage.error('删除失败: ' + (error.response?.data?.message || error.message))
+    } finally {
+      loading.value = false
+    }
   })
 }
 
+// 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
   
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       loading.value = true
       try {
         if (noteForm.id) {
           // 编辑笔记
+          await updateNoteApi(noteForm.id, noteForm)
           const index = notes.value.findIndex(n => n.id === noteForm.id)
           if (index !== -1) {
-            notes.value[index] = {
-              ...noteForm,
-              updatedAt: new Date().toLocaleString()
-            }
+            notes.value[index] = { ...noteForm } as Note
           }
           ElMessage.success('笔记更新成功')
         } else {
           // 新增笔记
-          notes.value.push({
-            ...noteForm,
-            id: Date.now(),
-            createdAt: new Date().toLocaleString(),
-            updatedAt: new Date().toLocaleString()
-          })
+          console.log('Creating note with:', noteForm)
+          const response = await createNoteApi(noteForm)
+          notes.value.unshift(response.data)
           ElMessage.success('笔记添加成功')
         }
         dialogVisible.value = false
       } catch (error: any) {
-        ElMessage.error(error.message || '操作失败')
+        ElMessage.error('操作失败: ' + (error.response?.data?.message || error.message))
       } finally {
         loading.value = false
       }
@@ -129,10 +132,23 @@ const handleSubmit = async () => {
   })
 }
 
+// 取消操作
 const handleCancel = () => {
   dialogVisible.value = false
   formRef.value?.resetFields()
 }
+
+// 搜索笔记
+const handleSearch = () => {
+  loadNotes()
+}
+
+
+
+// 页面加载时获取笔记列表
+onMounted(() => {
+  loadNotes()
+})
 </script>
 
 <template>
@@ -148,15 +164,12 @@ const handleCancel = () => {
     <div class="content-wrapper">
       <div class="notes-filter">
         <el-input
+          v-model="searchKeyword"
           placeholder="搜索笔记..."
-          style="width: 300px; margin-right: 20px;"
+          style="width: 300px;"
           :prefix-icon="Search"
+          @keyup.enter="handleSearch"
         />
-        <el-select placeholder="选择课程" style="width: 200px;">
-          <el-option label="全部课程" value=""></el-option>
-          <el-option label="Java基础教程" value="1"></el-option>
-          <el-option label="Vue 3从入门到实战" value="2"></el-option>
-        </el-select>
       </div>
       
       <div class="notes-list">
@@ -185,14 +198,10 @@ const handleCancel = () => {
           </div>
           
           <div class="note-meta">
-            <div class="course-info">
-              课程：<el-tag type="primary">{{ note.courseTitle }}</el-tag>
-              课时：<el-tag>{{ note.lessonTitle }}</el-tag>
-            </div>
             <div class="time-info">
-              创建时间：{{ note.createdAt }}
-              <span v-if="note.createdAt !== note.updatedAt">
-                | 更新时间：{{ note.updatedAt }}
+              创建时间：{{ note.createTime }}
+              <span v-if="note.createTime !== note.updateTime">
+                | 更新时间：{{ note.updateTime }}
               </span>
             </div>
           </div>
@@ -225,20 +234,6 @@ const handleCancel = () => {
             :rows="6"
             placeholder="请输入笔记内容"
           />
-        </el-form-item>
-        
-        <el-form-item label="所属课程">
-          <el-select v-model="noteForm.courseId" placeholder="选择课程">
-            <el-option label="Java基础教程" value="1"></el-option>
-            <el-option label="Vue 3从入门到实战" value="2"></el-option>
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item label="所属课时">
-          <el-select v-model="noteForm.lessonId" placeholder="选择课时">
-            <el-option label="Java环境搭建" value="1"></el-option>
-            <el-option label="变量和数据类型" value="2"></el-option>
-          </el-select>
         </el-form-item>
       </el-form>
       

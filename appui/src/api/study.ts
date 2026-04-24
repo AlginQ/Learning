@@ -8,7 +8,7 @@ export const addStudyRecord = (data: {
   duration: number
   progress: number
 }) => {
-  return request.post<ApiResponse<null>>('/study/record', data)
+  return request.post<ApiResponse<null>>('/api/study/record', data)
 }
 
 // 获取用户学习记录
@@ -16,15 +16,15 @@ export const getUserStudyRecords = (params?: {
   startDate?: string
   endDate?: string
 }) => {
-  return request.get<ApiResponse<any[]>>('/study/records', { params })
+  return request.get<ApiResponse<any[]>>('/api/study/records', { params })
 }
 
 // 获取用户学习统计
 export const getUserStudyStatistics = () => {
-  return request.get<ApiResponse<any>>('/study/statistics')
+  return request.get<ApiResponse<any>>('/api/study/statistics')
 }
 
 // 获取最近学习记录
 export const getRecentStudyRecords = (limit: number = 10) => {
-  return request.get<ApiResponse<any[]>>('/study/recent', { params: { limit } })
+  return request.get<ApiResponse<any[]>>('/api/study/recent', { params: { limit } })
 }

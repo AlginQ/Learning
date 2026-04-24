@@ -91,6 +91,7 @@ const goToRegister = () => {
             :loading="loading"
             @click="handleSubmit"
             class="login-btn"
+            style="background-color: #5B8DEF; border-color: #5B8DEF;"
           >
             {{ loading ? '登录中...' : '登录' }}
           </el-button>
@@ -129,7 +130,7 @@ const goToRegister = () => {
 .login-header {
   text-align: center;
   padding: 40px 30px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5B8DEF 0%, #5B8DEF 100%);
   color: white;
 }
 

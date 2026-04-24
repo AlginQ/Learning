@@ -151,14 +151,9 @@
                                     </template>
                                   </el-dropdown>
                                   
-                                  <el-button size="small" plain>
-                                    <el-icon><Message /></el-icon>
-                                    字幕
-                                  </el-button>
+
                                   
-                                  <el-button size="small" plain>
-                                    <el-icon><ChatDotRound /></el-icon>
-                                  </el-button>
+
                                 </div>
                                               
                                 <div class="right-controls">
@@ -178,12 +173,7 @@
                   </div>
                 </div>
                 
-                <!-- 记笔记按钮 -->
-                <div class="note-section">
-                  <el-button type="primary" @click="openNoteDialog" icon="Edit">
-                    记笔记 ({{ currentTime | formatTime }})
-                  </el-button>
-                </div>
+
               </div>
             </div>
           </el-card>
@@ -476,9 +466,7 @@ const loadLessonProgress = (courseId: number, lessonId: number) => {
 
 // 交互状态
 const isFavorite = ref(false)
-const noteDialogVisible = ref(false)
 const replyDialogVisible = ref(false)
-const noteContent = ref('')
 const newComment = ref('')
 const replyContent = ref('')
 
@@ -1395,20 +1383,6 @@ const shareCourse = () => {
   ElMessage.success('分享链接已复制到剪贴板')
 }
 
-const openNoteDialog = () => {
-  noteDialogVisible.value = true
-}
-
-const saveNote = () => {
-  if (noteContent.value.trim()) {
-    ElMessage.success('笔记保存成功')
-    noteDialogVisible.value = false
-    noteContent.value = ''
-  } else {
-    ElMessage.warning('请输入笔记内容')
-  }
-}
-
 // 章节状态相关函数
 const isLessonCompleted = (lesson: Lesson): boolean => {
   if (!course.value) return false
@@ -1596,50 +1570,7 @@ const stopProgressTimer = () => {
   }
 }
 
-// 组件生命周期
-onMounted(() => {
-  // 模拟 API 调用
-  setTimeout(() => {
-    const id = parseInt(courseId)
-    const courseData = getCourseById(id)
-    const chaptersData = getChaptersByCourseId(id)
-    
-    if (courseData) {
-      course.value = courseData
-      chapters.value = chaptersData
-      
-      // 保存课程信息到本地存储，确保课程出现在学习记录中
-      saveLearningProgress(id)
-      
-      // 加载课程学习进度
-      loadLearningProgress(id)
-      
-      if (chaptersData.length > 0) {
-        activeChapter.value = chaptersData[0].id
-        // 默认选择第一个免费课程
-        const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
-        if (firstFreeLesson) {
-          currentLesson.value = firstFreeLesson
-          // 加载课时进度
-          currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
-        }
-      }
-    }
-    startProgressTimer()
-  }, 1000)
-  
-  // 添加全局键盘监听
-  window.addEventListener('keydown', (e) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-      return // 如果焦点在输入框内，不处理快捷键
-    }
-    handleKeyDown(e)
-  })
-})
 
-onUnmounted(() => {
-  stopProgressTimer()
-})
 </script>
 
 <style scoped>

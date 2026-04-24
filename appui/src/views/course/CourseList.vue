@@ -308,6 +308,17 @@ const loadCourses = async () => {
       total.value = mockCourses.length
     }
     
+    // 前端过滤：按关键词搜索
+    if (searchForm.keyword) {
+      const keyword = searchForm.keyword.toLowerCase()
+      courseList = courseList.filter(course => {
+        // 确保课程对象有title字段，并且title或description包含关键词
+        return course.title && (course.title.toLowerCase().includes(keyword) ||
+               (course.description && course.description.toLowerCase().includes(keyword)))
+      })
+      total.value = courseList.length
+    }
+    
     // 前端过滤：按分类筛选
     if (searchForm.categoryId) {
       courseList = courseList.filter(course => course.categoryId === searchForm.categoryId)
@@ -344,6 +355,17 @@ const loadCourses = async () => {
     console.error('获取课程列表失败:', error)
     // API调用失败时使用模拟数据
     let courseList = mockCourses
+    
+    // 前端过滤：按关键词搜索
+    if (searchForm.keyword) {
+      const keyword = searchForm.keyword.toLowerCase()
+      courseList = courseList.filter(course => {
+        // 确保课程对象有title字段，并且title或description包含关键词
+        return course.title && (course.title.toLowerCase().includes(keyword) ||
+               (course.description && course.description.toLowerCase().includes(keyword)))
+      })
+      total.value = courseList.length
+    }
     
     // 前端过滤：按分类筛选
     if (searchForm.categoryId) {
@@ -404,6 +426,13 @@ const resetSearch = () => {
 const handlePageChange = (page: number) => {
   pagination.page = page
   loadCourses()
+}
+
+// 处理图片加载错误
+const handleImageError = (event: Event, course: any) => {
+  const img = event.target as HTMLImageElement
+  // 如果图片加载失败，使用占位图
+  img.src = `https://via.placeholder.com/400x225?text=${encodeURIComponent(course.title)}`
 }
 
 // 跳转到课程详情
@@ -556,8 +585,9 @@ onMounted(() => {
           <div class="course-card" @click="goToCourseDetail(course.id)">
             <div class="course-cover">
               <img
-                :src="course.cover_image || course.coverImage || 'https://via.placeholder.com/400x225?text=' + encodeURIComponent(course.title)"
+                :src="course.coverImage || course.cover_image || 'https://via.placeholder.com/400x225?text=' + encodeURIComponent(course.title)"
                 :alt="course.title"
+                @error="handleImageError($event, course)"
               />
               
               <!-- 热门标签 -->

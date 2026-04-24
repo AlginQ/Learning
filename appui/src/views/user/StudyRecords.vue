@@ -3,128 +3,69 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { VideoPlay, Clock, Document, DataAnalysis, Calendar, Trophy, Star } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { getUserStudyRecords, getUserStudyStatistics, getRecentStudyRecords } from '@/api/study'
+
+// 学习记录类型定义
+interface StudyRecord {
+  id: number
+  courseId: number
+  courseTitle: string
+  lessonTitle: string
+  studyTime: string
+  duration: number
+  progress: number
+  category?: string
+  difficulty?: string
+}
 
 const userStore = useUserStore()
 const activeTab = ref('statistics')
 const loading = ref(false)
-const filterDate = ref([])
+const filterDate = ref<string[]>([])
+const selectedCourse = ref('')
 
 // 学习统计数据
 const studyStats = reactive({
-  totalStudyTime: 145.5, // 总学习时长（小时）
-  completedLessons: 87, // 完成课时数
-  completedCourses: 12, // 完成课程数
-  currentStreak: 7, // 连续学习天数
-  totalCourses: 23, // 总学习课程数
-  todayStudyTime: 2.5, // 今日学习时长
-  weekStudyTime: 18.7, // 本周学习时长
-  monthStudyTime: 65.3 // 本月学习时长
+  totalStudyTime: 0, // 总学习时长（小时）
+  completedLessons: 0, // 完成课时数
+  completedCourses: 0, // 完成课程数
+  currentStreak: 0, // 连续学习天数
+  totalCourses: 0, // 总学习课程数
+  todayStudyTime: 0, // 今日学习时长
+  weekStudyTime: 0, // 本周学习时长
+  monthStudyTime: 0 // 本月学习时长
 })
 
 // 学习记录数据
-const studyRecords = ref([
-  {
-    id: 1,
-    courseId: 1,
-    courseTitle: 'Java基础教程',
-    lessonTitle: 'Java环境搭建',
-    studyTime: '2024-01-15 14:30:00',
-    duration: 45, // 分钟
-    progress: 100,
-    category: '编程语言',
-    difficulty: '初级'
-  },
-  {
-    id: 2,
-    courseId: 1,
-    courseTitle: 'Java基础教程',
-    lessonTitle: '变量和数据类型',
-    studyTime: '2024-01-15 10:15:00',
-    duration: 38,
-    progress: 100,
-    category: '编程语言',
-    difficulty: '初级'
-  },
-  {
-    id: 3,
-    courseId: 2,
-    courseTitle: 'Vue 3从入门到实战',
-    lessonTitle: 'Vue 3简介',
-    studyTime: '2024-01-14 16:20:00',
-    duration: 25,
-    progress: 75,
-    category: '前端开发',
-    difficulty: '中级'
-  },
-  {
-    id: 4,
-    courseId: 2,
-    courseTitle: 'Vue 3从入门到实战',
-    lessonTitle: 'Composition API',
-    studyTime: '2024-01-14 14:00:00',
-    duration: 42,
-    progress: 30,
-    category: '前端开发',
-    difficulty: '中级'
-  },
-  {
-    id: 5,
-    courseId: 3,
-    courseTitle: 'Python数据分析入门',
-    lessonTitle: 'NumPy基础',
-    studyTime: '2024-01-13 19:30:00',
-    duration: 55,
-    progress: 100,
-    category: '数据科学',
-    difficulty: '中级'
-  },
-  {
-    id: 6,
-    courseId: 4,
-    courseTitle: 'Spring Boot企业级开发',
-    lessonTitle: 'Spring Boot起步',
-    studyTime: '2024-01-13 15:45:00',
-    duration: 35,
-    progress: 45,
-    category: '后端开发',
-    difficulty: '高级'
-  }
-])
+const studyRecords = ref<StudyRecord[]>([])
 
 // 时间维度统计数据
 const timeStats = ref([
-  { period: '今日', hours: 2.5, lessons: 3, courses: 2 },
-  { period: '本周', hours: 18.7, lessons: 12, courses: 4 },
-  { period: '本月', hours: 65.3, lessons: 28, courses: 8 },
-  { period: '总计', hours: 145.5, lessons: 87, courses: 12 }
+  { period: '今日', hours: 0, lessons: 0, courses: 0 },
+  { period: '本周', hours: 0, lessons: 0, courses: 0 },
+  { period: '本月', hours: 0, lessons: 0, courses: 0 },
+  { period: '总计', hours: 0, lessons: 0, courses: 0 }
 ])
 
 // 本周学习数据（用于图表）
 const weeklyData = ref([
-  { day: '周一', hours: 2.5 },
-  { day: '周二', hours: 3.2 },
-  { day: '周三', hours: 1.8 },
-  { day: '周四', hours: 4.1 },
-  { day: '周五', hours: 2.9 },
-  { day: '周六', hours: 3.7 },
-  { day: '周日', hours: 1.3 }
+  { day: '周一', hours: 0 },
+  { day: '周二', hours: 0 },
+  { day: '周三', hours: 0 },
+  { day: '周四', hours: 0 },
+  { day: '周五', hours: 0 },
+  { day: '周六', hours: 0 },
+  { day: '周日', hours: 0 }
 ])
 
 // 课程分布数据
-const courseDistribution = ref([
-  { name: '编程语言', value: 8 },
-  { name: '前端开发', value: 6 },
-  { name: '后端开发', value: 5 },
-  { name: '数据科学', value: 3 },
-  { name: '移动开发', value: 2 },
-  { name: '数据库', value: 2 }
-])
+const courseDistribution = ref<{ name: string; value: number }[]>([])
 
 // 难度分布数据
 const difficultyDistribution = ref([
-  { name: '初级', value: 12 },
-  { name: '中级', value: 8 },
-  { name: '高级', value: 3 }
+  { name: '初级', value: 0 },
+  { name: '中级', value: 0 },
+  { name: '高级', value: 0 }
 ])
 
 // 最近学习记录
@@ -134,6 +75,55 @@ const recentRecords = computed(() => {
     .sort((a, b) => new Date(b.studyTime).getTime() - new Date(a.studyTime).getTime())
     .slice(0, 10)
 })
+
+// 过滤后的学习记录
+const filteredRecords = computed(() => {
+  return studyRecords.value.filter(record => {
+    // 课程筛选
+    if (selectedCourse.value && record.courseId.toString() !== selectedCourse.value) {
+      return false
+    }
+    
+    // 日期范围筛选
+    if (filterDate.value && filterDate.value.length === 2) {
+      const recordDate = new Date(record.studyTime)
+      const startDate = new Date(filterDate.value[0])
+      const endDate = new Date(filterDate.value[1])
+      // 设置结束日期为当天的23:59:59
+      endDate.setHours(23, 59, 59, 999)
+      if (recordDate < startDate || recordDate > endDate) {
+        return false
+      }
+    }
+    
+    return true
+  })
+})
+
+// 处理筛选条件变化
+const handleFilterChange = async () => {
+  if (userStore.isLogin) {
+    loading.value = true
+    try {
+      // 构建筛选参数
+      const params: any = {}
+      if (filterDate.value && filterDate.value.length === 2) {
+        params.startDate = filterDate.value[0]
+        params.endDate = filterDate.value[1]
+      }
+      
+      // 获取学习记录
+      const recordsResponse = await getUserStudyRecords(params)
+      if (recordsResponse.code === 200 && recordsResponse.data) {
+        studyRecords.value = recordsResponse.data
+      }
+    } catch (error) {
+      console.error('获取学习记录失败:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+}
 
 // 已完成 vs 未完成课程
 const completionStats = computed(() => {
@@ -193,6 +183,7 @@ const initCharts = () => {
         type: 'pie',
         radius: ['40%', '70%'],
         data: courseDistribution.value,
+        color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#722ed1'],
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
@@ -216,6 +207,7 @@ const initCharts = () => {
         type: 'pie',
         radius: ['30%', '60%'],
         data: difficultyDistribution.value,
+        color: ['#409eff', '#67c23a', '#e6a23c'],
         label: {
           formatter: '{b}: {d}%'
         }
@@ -243,10 +235,65 @@ const initCharts = () => {
 }
 
 // 页面加载完成后初始化图表
-onMounted(() => {
-  setTimeout(() => {
-    initCharts()
-  }, 100)
+onMounted(async () => {
+  if (userStore.isLogin) {
+    loading.value = true
+    try {
+      // 获取学习统计数据
+      const statsResponse = await getUserStudyStatistics()
+      if (statsResponse.code === 200 && statsResponse.data) {
+        const stats = statsResponse.data
+        studyStats.totalStudyTime = Math.round((stats.totalStudyTime || 0) * 10) / 10
+        studyStats.completedLessons = stats.completedLessons || 0
+        studyStats.completedCourses = stats.completedCourses || 0
+        studyStats.currentStreak = stats.currentStreak || 0
+        studyStats.totalCourses = stats.totalCourses || 0
+        studyStats.todayStudyTime = Math.round((stats.todayStudyTime || 0) * 10) / 10
+        studyStats.weekStudyTime = Math.round((stats.weekStudyTime || 0) * 10) / 10
+        studyStats.monthStudyTime = Math.round((stats.monthStudyTime || 0) * 10) / 10
+        
+        // 更新时间维度统计数据
+        timeStats.value = [
+          { period: '今日', hours: Math.round((stats.todayStudyTime || 0) * 10) / 10, lessons: stats.todayLessons || 0, courses: stats.todayCourses || 0 },
+          { period: '本周', hours: Math.round((stats.weekStudyTime || 0) * 10) / 10, lessons: stats.weekLessons || 0, courses: stats.weekCourses || 0 },
+          { period: '本月', hours: Math.round((stats.monthStudyTime || 0) * 10) / 10, lessons: stats.monthLessons || 0, courses: stats.monthCourses || 0 },
+          { period: '总计', hours: Math.round((stats.totalStudyTime || 0) * 10) / 10, lessons: stats.completedLessons || 0, courses: stats.completedCourses || 0 }
+        ]
+        
+        // 更新课程分布数据
+        if (stats.courseDistribution) {
+          courseDistribution.value = stats.courseDistribution
+        }
+        
+        // 更新难度分布数据
+        if (stats.difficultyDistribution) {
+          difficultyDistribution.value = stats.difficultyDistribution
+        }
+        
+        // 更新本周学习数据
+        if (stats.weeklyData) {
+          weeklyData.value = stats.weeklyData
+        }
+      }
+      
+      // 获取学习记录
+      const recordsResponse = await getUserStudyRecords()
+      if (recordsResponse.code === 200 && recordsResponse.data) {
+        studyRecords.value = recordsResponse.data
+      }
+    } catch (error) {
+      console.error('获取学习数据失败:', error)
+    } finally {
+      loading.value = false
+      setTimeout(() => {
+        initCharts()
+      }, 100)
+    }
+  } else {
+    setTimeout(() => {
+      initCharts()
+    }, 100)
+  }
 })
 </script>
 
@@ -359,7 +406,7 @@ onMounted(() => {
           <!-- 最近学习记录 -->
           <div class="recent-records">
             <h3>最近学习记录</h3>
-            <el-table :data="recentRecords" stripe>
+            <el-table :data="recentRecords" stripe v-loading="loading">
               <el-table-column prop="studyTime" label="学习时间" width="180" />
               <el-table-column prop="courseTitle" label="课程名称" min-width="200">
                 <template #default="{ row }">
@@ -397,16 +444,19 @@ onMounted(() => {
               start-placeholder="开始日期"
               end-placeholder="结束日期"
               style="width: 300px; margin-right: 20px;"
+              @change="handleFilterChange"
             />
-            <el-select placeholder="选择课程" style="width: 200px;">
+            <el-select v-model="selectedCourse" placeholder="选择课程" style="width: 200px;" @change="handleFilterChange">
               <el-option label="全部课程" value=""></el-option>
               <el-option label="Java基础教程" value="1"></el-option>
               <el-option label="Vue 3从入门到实战" value="2"></el-option>
+              <el-option label="Python数据分析入门" value="3"></el-option>
+              <el-option label="Spring Boot企业级开发" value="4"></el-option>
             </el-select>
           </div>
           
           <div class="records-list">
-            <el-table :data="studyRecords" stripe>
+            <el-table :data="filteredRecords" stripe v-loading="loading">
               <el-table-column prop="studyTime" label="学习时间" width="180">
                 <template #default="{ row }">
                   {{ row.studyTime }}
@@ -502,7 +552,7 @@ onMounted(() => {
 
 .bg-blue { background-color: #409eff; }
 .bg-green { background-color: #67c23a; }
-.bg-purple { background-color: #722ed1; }
+.bg-purple { background-color: #67c23a; }
 .bg-orange { background-color: #fa8c16; }
 
 .stat-content {
@@ -589,7 +639,7 @@ onMounted(() => {
 }
 
 .time-stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #409eff 0%, #667eea 100%);
   border-radius: 12px;
   padding: 20px;
   color: white;

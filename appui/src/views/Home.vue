@@ -310,11 +310,11 @@ onMounted(() => {
             </el-dropdown>
           </template>
           <template v-else>
-            <el-button type="primary" @click="$router.push('/login')">
+            <el-button type="primary" @click="$router.push('/login')" style="background-color: #5B8DEF; border-color: #5B8DEF;">
               <el-icon><Lock /></el-icon>
               登录
             </el-button>
-            <el-button @click="$router.push('/register')">注册</el-button>
+            <el-button @click="$router.push('/register')" style="background-color: #5B8DEF; border-color: #5B8DEF; color: white;">注册</el-button>
           </template>
         </div>
       </div>

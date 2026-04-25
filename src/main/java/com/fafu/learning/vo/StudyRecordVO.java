@@ -25,6 +25,11 @@ public class StudyRecordVO {
     private String courseTitle;
     
     /**
+     * 课程封面
+     */
+    private String courseCover;
+    
+    /**
      * 课时标题
      */
     private String lessonTitle;

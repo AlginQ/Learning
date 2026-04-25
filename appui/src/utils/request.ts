@@ -19,12 +19,16 @@ class HttpRequest {
     this.instance.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('token')
+        console.log('发送请求:', config.url)
+        console.log('请求参数:', config.data || config.params)
+        console.log('请求token:', token)
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }
         return config
       },
       (error) => {
+        console.error('请求错误:', error)
         return Promise.reject(error)
       }
     )

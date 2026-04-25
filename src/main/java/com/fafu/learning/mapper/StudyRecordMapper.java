@@ -17,7 +17,7 @@ public interface StudyRecordMapper extends BaseMapper<StudyRecord> {
     /**
      * 获取用户学习记录
      */
-    @Select("SELECT sr.*, c.title as course_title, l.title as lesson_title, cat.name as category " +
+    @Select("SELECT sr.*, c.title as course_title, c.cover_image as course_cover, l.title as lesson_title, cat.name as category " +
             "FROM study_record sr " +
             "LEFT JOIN course c ON sr.course_id = c.id " +
             "LEFT JOIN lesson l ON sr.lesson_id = l.id " +
@@ -32,7 +32,7 @@ public interface StudyRecordMapper extends BaseMapper<StudyRecord> {
     /**
      * 获取最近学习记录
      */
-    @Select("SELECT sr.*, c.title as course_title, l.title as lesson_title, cat.name as category " +
+    @Select("SELECT sr.*, c.title as course_title, c.cover_image as course_cover, l.title as lesson_title, cat.name as category " +
             "FROM study_record sr " +
             "LEFT JOIN course c ON sr.course_id = c.id " +
             "LEFT JOIN lesson l ON sr.lesson_id = l.id " +

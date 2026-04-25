@@ -377,6 +377,7 @@ import {
   Setting
 } from '@element-plus/icons-vue'
 import type { Course, Chapter, Lesson } from '@/types/course'
+import { addStudyRecord } from '@/api/study'
 
 const route = useRoute()
 const router = useRouter()
@@ -395,6 +396,7 @@ const quality = ref('高清')
 const showOverlay = ref(false)
 const videoPlayer = ref<HTMLDivElement | null>(null)
 const videoElement = ref<HTMLVideoElement | null>(null)
+const recordTimer = ref<number | null>(null)
 
 // 学习进度
 const currentProgress = ref(0)
@@ -1255,11 +1257,91 @@ const togglePlay = () => {
   if (videoElement.value) {
     if (isPlaying.value) {
       videoElement.value.pause()
+      stopRecordTimer()
     } else {
       videoElement.value.play()
+      startRecordTimer()
     }
     isPlaying.value = !isPlaying.value
     ElMessage.info(isPlaying.value ? '开始播放' : '暂停播放')
+  }
+}
+
+// 上报学习记录
+const reportStudyRecord = async () => {
+  // 检查用户是否登录
+  const token = localStorage.getItem('token')
+  console.log('用户登录状态:', !!token)
+  if (!token) {
+    console.log('用户未登录，跳过上报')
+    return
+  }
+  
+  if (!currentLesson.value) {
+    console.error('上报学习记录失败: currentLesson 为 null')
+    return
+  }
+  if (!course.value) {
+    console.error('上报学习记录失败: course 为 null')
+    return
+  }
+  if (currentTime.value < 10) {
+    console.log('学习时间过短，跳过上报')
+    return
+  }
+  try {
+    // 将秒数转换为分钟数
+    const durationInMinutes = Math.max(1, Math.round(currentTime.value / 60))
+    const progress = Math.max(1, currentProgress.value)
+    const courseId = Number(course.value.id)
+    const lessonId = Number(currentLesson.value.id)
+    
+    // 确保参数类型正确
+    const payload = {
+      courseId: courseId,
+      lessonId: lessonId,
+      duration: durationInMinutes,
+      progress: progress
+    }
+    
+    console.log('上报学习记录:', payload)
+    console.log('参数类型:', {
+      courseId: typeof payload.courseId,
+      lessonId: typeof payload.lessonId,
+      duration: typeof payload.duration,
+      progress: typeof payload.progress
+    })
+    
+    // 确保所有参数都有值
+    if (!payload.courseId || !payload.lessonId || !payload.duration || !payload.progress) {
+      console.error('上报学习记录失败: 参数不完整')
+      return
+    }
+    
+    console.log('准备发送学习记录请求')
+    const response = await addStudyRecord(payload)
+    console.log('上报学习记录成功:', response)
+  } catch (error: any) {
+    console.error('上报学习记录失败:', error)
+    console.error('错误详情:', error.response?.data)
+    console.error('错误状态:', error.response?.status)
+    console.error('错误头信息:', error.response?.headers)
+  }
+}
+
+// 开始记录定时器
+const startRecordTimer = () => {
+  // 每30秒上报一次学习记录
+  recordTimer.value = window.setInterval(() => {
+    reportStudyRecord()
+  }, 30000)
+}
+
+// 停止记录定时器
+const stopRecordTimer = () => {
+  if (recordTimer.value) {
+    clearInterval(recordTimer.value)
+    recordTimer.value = null
   }
 }
 
@@ -1270,8 +1352,11 @@ const updateTime = () => {
   }
 }
 
-const handleEnded = () => {
+const handleEnded = async () => {
   isPlaying.value = false
+  stopRecordTimer()
+  // 视频结束时上报学习记录
+  await reportStudyRecord()
   ElMessage.info('视频播放结束')
 }
 
@@ -1366,6 +1451,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopProgressTimer()
+  stopRecordTimer()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })
 

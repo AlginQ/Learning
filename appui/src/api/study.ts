@@ -8,6 +8,7 @@ export const addStudyRecord = (data: {
   duration: number
   progress: number
 }) => {
+  console.log('发送学习记录请求:', data)
   return request.post<ApiResponse<null>>('/api/study/record', data)
 }
 

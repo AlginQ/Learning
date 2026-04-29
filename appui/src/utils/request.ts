@@ -20,10 +20,15 @@ class HttpRequest {
       (config) => {
         const token = localStorage.getItem('token')
         console.log('发送请求:', config.url)
-        console.log('请求参数:', config.data || config.params)
+        console.log('请求参数类型:', config.data instanceof FormData ? 'FormData' : typeof config.data)
         console.log('请求token:', token)
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
+        }
+        // 如果是FormData，不设置Content-Type，让axios自动处理
+        if (config.data instanceof FormData) {
+          config.headers = config.headers || {}
+          delete config.headers['Content-Type']
         }
         return config
       },

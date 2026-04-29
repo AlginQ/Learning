@@ -81,11 +81,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         return;
                     }
                 } else {
-                    // 缺少Authorization头，返回401未授权
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"code\":401,\"msg\":\"缺少Authorization头\"}");
-                    return;
-                }
+                        // 缺少Authorization头，继续执行过滤器链，由控制器处理未授权情况
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
             } catch (Exception e) {
                 logger.error("JWT认证处理异常: " + e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

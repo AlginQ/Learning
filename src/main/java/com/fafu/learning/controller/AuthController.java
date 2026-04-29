@@ -14,9 +14,13 @@ import com.fafu.learning.dto.UserUpdateDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 认证控制器
@@ -192,24 +196,40 @@ public class AuthController {
     }
     
     /**
-     * 更新用户头像
+     * 更新用户头像（支持文件上传）
      */
     @PostMapping("/avatar")
-    public ApiResult<Void> updateUserAvatar(
+    public ApiResult<Map<String, String>> updateUserAvatar(
             HttpServletRequest request,
-            @RequestParam("avatarUrl") String avatarUrl) {
+            @RequestParam("avatar") MultipartFile file) {
+        System.out.println("收到头像上传请求");
+        System.out.println("文件是否为空: " + (file == null || file.isEmpty()));
+        if (file != null) {
+            System.out.println("文件名: " + file.getOriginalFilename());
+            System.out.println("文件大小: " + file.getSize());
+            System.out.println("文件类型: " + file.getContentType());
+        }
+        
         try {
             String token = request.getHeader("Authorization");
+            System.out.println("Authorization token: " + token);
+            
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
                 Long userId = jwtUtil.getUserIdFromToken(token);
+                System.out.println("解析出的用户ID: " + userId);
+                
                 if (userId != null) {
-                    userService.updateUserAvatar(userId, avatarUrl);
-                    return ApiResult.success("头像更新成功", null);
+                    String avatarUrl = userService.updateUserAvatar(userId, file);
+                    Map<String, String> result = new HashMap<>();
+                    result.put("avatarUrl", avatarUrl);
+                    return ApiResult.success("头像更新成功", result);
                 }
             }
             return ApiResult.unauthorized("未授权");
         } catch (Exception e) {
+            System.err.println("头像上传异常: " + e.getMessage());
+            e.printStackTrace();
             return ApiResult.badRequest(e.getMessage());
         }
     }

@@ -28,9 +28,9 @@ export const updateUserProfile = (data: any) => {
   return request.put<ApiResponse<any>>('/api/auth/info', data)
 }
 
-// 更新用户头像
-export const updateUserAvatar = (avatarUrl: string) => {
-  return request.post<ApiResponse<null>>('/api/auth/avatar', { avatarUrl })
+// 更新用户头像（支持文件上传）
+export const updateUserAvatar = (formData: FormData) => {
+  return request.post<ApiResponse<{ avatarUrl: string }>>('/api/auth/avatar', formData)
 }
 
 // 修改密码

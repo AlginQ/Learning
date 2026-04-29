@@ -25,7 +25,21 @@ const profileForm = reactive({
 // 头像相关
 const avatarDialogVisible = ref(false)
 const avatarPreview = ref('')
-const currentAvatar = ref(userStore.currentUser?.avatar || '')
+
+// 获取头像URL（处理相对路径）
+const getAvatarUrl = (avatar?: string): string => {
+  if (!avatar || avatar.trim() === '') {
+    // 如果没有头像，使用默认头像
+    return `${window.location.origin}/images/4624.png`
+  }
+  // 如果是相对路径，拼接完整URL
+  if (avatar.startsWith('/')) {
+    return `${window.location.origin}${avatar}`
+  }
+  return avatar
+}
+
+const currentAvatar = ref(getAvatarUrl(userStore.currentUser?.avatar))
 
 // 密码修改表单
 const passwordForm = reactive({
@@ -100,7 +114,17 @@ const initFormData = () => {
   profileForm.phone = userStore.currentUser?.phone || ''
   profileForm.gender = userStore.currentUser?.gender || 0
   profileForm.birthday = userStore.currentUser?.birthday || ''
-  currentAvatar.value = userStore.currentUser?.avatar || ''
+  currentAvatar.value = getAvatarUrl(userStore.currentUser?.avatar)
+}
+
+// 刷新用户信息（从服务器获取最新数据）
+const refreshUserInfo = async () => {
+  try {
+    await userStore.getUserInfo()
+    initFormData()
+  } catch (error) {
+    console.error('刷新用户信息失败:', error)
+  }
 }
 
 // 更新个人信息
@@ -124,24 +148,84 @@ const handleUpdateProfile = async () => {
   }
 }
 
+// 文件上传input引用
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
 // 处理头像上传
 const handleAvatarUpload = () => {
-  // 这里应该集成实际的文件上传逻辑
-  // 暂时使用模拟数据
-  avatarPreview.value = 'https://via.placeholder.com/200x200/409EFF/FFFFFF?text=Avatar'
-  avatarDialogVisible.value = true
+  // 触发文件选择对话框
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
+  }
+}
+
+// 当前选择的文件
+const selectedFile = ref<File | null>(null)
+
+// 处理文件选择
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (file) {
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+      ElMessage.error('请选择图片文件')
+      return
+    }
+    
+    // 检查文件大小（最大2MB）
+    if (file.size > 2 * 1024 * 1024) {
+      ElMessage.error('图片大小不能超过2MB')
+      return
+    }
+    
+    // 保存选择的文件
+    selectedFile.value = file
+    
+    // 读取文件并显示预览
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string
+      avatarDialogVisible.value = true
+    }
+    reader.readAsDataURL(file)
+  }
+  
+  // 重置input
+  target.value = ''
 }
 
 // 确认更换头像
 const confirmAvatarChange = async () => {
   avatarLoading.value = true
   try {
-    const response = await updateUserAvatar(avatarPreview.value)
+    if (!selectedFile.value) {
+      ElMessage.error('请先选择图片文件')
+      return
+    }
+    
+    console.log('准备上传头像文件:')
+    console.log('文件名:', selectedFile.value.name)
+    console.log('文件大小:', selectedFile.value.size)
+    console.log('文件类型:', selectedFile.value.type)
+    
+    // 创建FormData
+    const formData = new FormData()
+    formData.append('avatar', selectedFile.value)
+    
+    // 调用上传API
+    const response = await updateUserAvatar(formData)
     if (response.code === 200) {
-      currentAvatar.value = avatarPreview.value
-      userStore.currentUser!.avatar = avatarPreview.value
+      // 更新头像URL
+      currentAvatar.value = response.data.avatarUrl
+      // 安全地更新store中的用户头像
+      if (userStore.currentUser) {
+        userStore.currentUser.avatar = response.data.avatarUrl
+      }
       ElMessage.success('头像更新成功')
       avatarDialogVisible.value = false
+      selectedFile.value = null
     }
   } catch (error: any) {
     ElMessage.error(error.message || '头像更新失败')
@@ -222,12 +306,22 @@ const handleTeacherApply = async (formEl: any) => {
 
 // 组件挂载时初始化
 onMounted(() => {
-  initFormData()
+  // 先从服务器获取最新的用户信息，然后再初始化表单
+  refreshUserInfo()
 })
 </script>
 
 <template>
   <div class="profile-container">
+    <!-- 隐藏的文件选择器 -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="image/*"
+      style="display: none;"
+      @change="handleFileSelect"
+    />
+    
     <div class="profile-header">
       <h1>个人中心</h1>
     </div>

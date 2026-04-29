@@ -76,9 +76,14 @@ public interface UserService extends IService<User> {
     UserInfoVO updateUserInfo(Long userId, UserUpdateDTO updateDTO);
     
     /**
-     * 更新用户头像
+     * 更新用户头像（字符串URL）
      */
     void updateUserAvatar(Long userId, String avatarUrl);
+    
+    /**
+     * 更新用户头像（文件上传）
+     */
+    String updateUserAvatar(Long userId, org.springframework.web.multipart.MultipartFile file);
     
     /**
      * 更新用户密码

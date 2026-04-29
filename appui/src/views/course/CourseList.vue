@@ -302,8 +302,8 @@ const loadCourses = async () => {
     let courseList = response.data.records
     total.value = response.data.total
     
-    // 如果课程数据少于12个，使用模拟数据
-    if (courseList.length < 12) {
+    // 如果课程数据为空，使用模拟数据
+    if (courseList.length === 0) {
       courseList = mockCourses
       total.value = mockCourses.length
     }
@@ -431,8 +431,9 @@ const handlePageChange = (page: number) => {
 // 处理图片加载错误
 const handleImageError = (event: Event, course: any) => {
   const img = event.target as HTMLImageElement
-  // 如果图片加载失败，使用占位图
-  img.src = `https://via.placeholder.com/400x225?text=${encodeURIComponent(course.title)}`
+  // 如果图片加载失败，使用picsum.photos作为占位图
+  const randomSeed = course.id || Math.floor(Math.random() * 1000)
+  img.src = `https://picsum.photos/400/225?random=${randomSeed}`
 }
 
 // 跳转到课程详情

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, Save, ArrowLeft } from '@element-plus/icons-vue'
+import { Plus, Delete, Document, ArrowLeft } from '@element-plus/icons-vue'
+import { addCourseApi } from '@/api/course'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 课程表单
 const courseForm = reactive({
@@ -13,7 +16,8 @@ const courseForm = reactive({
   category: '',
   coverImage: '',
   price: 0,
-  isFree: false
+  isFree: false,
+  teacherId: 0
 })
 
 // 章节列表
@@ -67,14 +71,52 @@ const deleteChapter = (index: number) => {
 // 保存课程
 const saveCourse = async () => {
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 获取当前用户ID作为教师ID
+    const userId = userStore.currentUser?.id || 0
+    if (!userId) {
+      ElMessage.error('请先登录')
+      return
+    }
     
-    ElMessage.success('课程创建成功')
-    router.push('/teacher/courses')
+    // 构建课程数据
+    const courseData = {
+      title: courseForm.title,
+      description: courseForm.description,
+      coverImage: courseForm.coverImage || `https://picsum.photos/400/225?random=${Math.random().toString(36).substr(2, 9)}`,
+      price: courseForm.isFree ? 0 : courseForm.price,
+      discountPrice: courseForm.isFree ? 0 : courseForm.price,
+      categoryId: getCategoryId(courseForm.category),
+      teacherId: userId,
+      lessonCount: chapters.value.length,
+      introduction: courseForm.description,
+      status: 0,
+      auditStatus: 0
+    }
+    
+    // 调用API保存课程
+    const response = await addCourseApi(courseData)
+    if (response.code === 200) {
+      ElMessage.success('课程创建成功，等待管理员审核')
+      router.push('/teacher/courses')
+    } else {
+      ElMessage.error(response.msg || '课程创建失败')
+    }
   } catch (error: any) {
-    ElMessage.error('课程创建失败: ' + error.message)
+    ElMessage.error('课程创建失败: ' + (error.message || '未知错误'))
   }
+}
+
+// 将分类名称转换为分类ID
+const getCategoryId = (categoryName: string): number => {
+  const categoryMap: Record<string, number> = {
+    'frontend': 1,
+    'backend': 2,
+    'mobile': 3,
+    'database': 4,
+    'cloud': 5,
+    'ai': 6
+  }
+  return categoryMap[categoryName] || 1
 }
 
 // 取消
@@ -192,7 +234,7 @@ const cancel = () => {
     
     <div class="form-actions">
       <el-button @click="cancel">取消</el-button>
-      <el-button type="primary" :icon="Save" @click="saveCourse">
+      <el-button type="primary" :icon="Document" @click="saveCourse">
         保存课程
       </el-button>
     </div>

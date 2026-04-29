@@ -9,7 +9,9 @@ import {
   updateCourseApi,
   deleteCourseApi,
   toggleCourseStatusApi,
-  toggleCourseRecommendApi
+  toggleCourseRecommendApi,
+  getPendingCoursesApi,
+  auditCourseApi
 } from '@/api/course'
 
 const route = useRoute()
@@ -22,6 +24,7 @@ interface CourseItem {
   discountPrice?: number
   status: number
   recommend: number
+  auditStatus: number
   studentCount: number
   rating: number
   createTime: string
@@ -36,6 +39,7 @@ const dialogVisible = ref(false)
 const editMode = ref(false)
 const currentCourse = ref<Partial<CourseItem>>({})
 const selectedCourses = ref<CourseItem[]>([])
+const activeTab = ref<'all' | 'pending'>('all')
 
 const pagination = ref({
   currentPage: 1,
@@ -230,6 +234,73 @@ const toggleRecommend = async (course: CourseItem) => {
   }
 }
 
+// 获取待审核课程
+const loadPendingCourses = async () => {
+  loading.value = true
+  try {
+    const response = await getPendingCoursesApi()
+    if (response.code === 200) {
+      courses.value = response.data || []
+      pagination.value.total = courses.value.length
+    } else {
+      courses.value = []
+      pagination.value.total = 0
+    }
+  } catch (error: any) {
+    ElMessage.error('获取待审核课程失败: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+// 审核课程
+const handleAuditCourse = async (course: CourseItem, status: number) => {
+  try {
+    const action = status === 1 ? '通过' : '拒绝'
+    await ElMessageBox.confirm(
+      `确定要${action}课程 "${course.title}" 的审核吗？`,
+      `${action}审核确认`,
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await auditCourseApi(course.id, status)
+    ElMessage.success(`课程审核${action}成功`)
+    if (activeTab.value === 'pending') {
+      loadPendingCourses()
+    } else {
+      loadCourses()
+    }
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(`审核课程失败: ` + (error.response?.data?.message || error.message))
+    }
+  }
+}
+
+// 获取审核状态文本
+const getAuditStatusText = (status: number): string => {
+  const statusMap: Record<number, string> = {
+    0: '待审核',
+    1: '已通过',
+    2: '已拒绝'
+  }
+  return statusMap[status] || '未知'
+}
+
+// 获取审核状态类型
+const getAuditStatusType = (status: number): string => {
+  const typeMap: Record<number, string> = {
+    0: 'warning',
+    1: 'success',
+    2: 'danger'
+  }
+  return typeMap[status] || 'info'
+}
+
 // 保存课程
 const saveCourse = async () => {
   try {
@@ -320,6 +391,21 @@ onMounted(() => {
 
     <!-- 搜索区域 -->
     <el-card class="search-card">
+      <!-- 标签页切换 -->
+      <div class="tab-switch">
+        <el-button 
+          :type="activeTab === 'all' ? 'primary' : 'default'" 
+          @click="activeTab = 'all'; loadCourses()"
+        >
+          全部课程
+        </el-button>
+        <el-button 
+          :type="activeTab === 'pending' ? 'primary' : 'default'" 
+          @click="activeTab = 'pending'; loadPendingCourses()"
+        >
+          待审核课程
+        </el-button>
+      </div>
       <el-row :gutter="20">
         <el-col :span="8">
           <el-input
@@ -336,7 +422,7 @@ onMounted(() => {
         <el-col :span="16">
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="resetSearch">重置</el-button>
-          <el-button :icon="Refresh" @click="loadCourses">刷新</el-button>
+          <el-button :icon="Refresh" @click="activeTab === 'pending' ? loadPendingCourses() : loadCourses()">刷新</el-button>
           <el-button type="success" :icon="Plus" @click="handleAddCourse">
             添加课程
           </el-button>
@@ -378,7 +464,14 @@ onMounted(() => {
         </el-table-column>
         <el-table-column prop="studentCount" label="学习人数" width="100" />
         <el-table-column prop="rating" label="评分" width="80" />
-        <el-table-column label="状态" width="100">
+        <el-table-column label="审核状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getAuditStatusType(row.auditStatus)">
+              {{ getAuditStatusText(row.auditStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="课程状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'">
               {{ row.status === 1 ? '上架' : '下架' }}
@@ -397,9 +490,26 @@ onMounted(() => {
             {{ new Date(row.createTime).toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column label="操作" width="350" fixed="right">
           <template #default="{ row }">
             <div class="operation-container">
+              <!-- 审核操作 -->
+              <div v-if="row.auditStatus === 0" class="audit-group">
+                <el-button 
+                  size="small" 
+                  type="success"
+                  @click="handleAuditCourse(row, 1)"
+                >
+                  通过
+                </el-button>
+                <el-button 
+                  size="small" 
+                  type="danger"
+                  @click="handleAuditCourse(row, 2)"
+                >
+                  拒绝
+                </el-button>
+              </div>
               <div class="button-group">
                 <el-button 
                   size="small" 
@@ -685,5 +795,22 @@ onMounted(() => {
 /* 危险操作按钮组 */
 .danger-group {
   margin-left: auto;
+}
+
+/* 标签页切换 */
+.tab-switch {
+  margin-bottom: 15px;
+}
+
+.tab-switch .el-button {
+  margin-right: 10px;
+  border-radius: 20px;
+  padding: 6px 20px;
+}
+
+/* 审核按钮组 */
+.audit-group {
+  display: flex;
+  gap: 4px;
 }
 </style>

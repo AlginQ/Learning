@@ -30,4 +30,21 @@ public interface CourseService extends IService<Course> {
      * 删除课程
      */
     void deleteCourse(Long id);
+    
+    /**
+     * 获取待审核课程列表
+     */
+    List<Course> getPendingCourses();
+    
+    /**
+     * 审核课程
+     * @param courseId 课程ID
+     * @param auditStatus 审核状态 1-通过 2-拒绝
+     */
+    void auditCourse(Long courseId, Integer auditStatus);
+    
+    /**
+     * 获取教师课程列表（包含审核状态）
+     */
+    List<Course> getTeacherCoursesWithAuditStatus(Long teacherId);
 }

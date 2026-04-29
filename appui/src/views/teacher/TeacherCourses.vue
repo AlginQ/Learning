@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Edit, Delete, Plus, View } from '@element-plus/icons-vue'
-import { getTeacherCoursesApi, deleteCourseApi } from '@/api/teacher'
+import { getTeacherCoursesApi as getCoursesApi, deleteCourseApi } from '@/api/course'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 interface CourseItem {
   id: number
   title: string
   description: string
-  category: string
-  students: number
-  views: number
-  status: string
+  categoryId: number
+  studentCount: number
+  status: number
+  auditStatus: number
   createTime: string
 }
 
@@ -26,18 +28,56 @@ const searchKeyword = ref('')
 const loadCourses = async () => {
   loading.value = true
   try {
-    const response = await getTeacherCoursesApi()
+    const userId = userStore.currentUser?.id || 0
+    if (!userId) {
+      ElMessage.error('请先登录')
+      return
+    }
+    const response = await getCoursesApi(userId)
     if (response.code === 200) {
       courses.value = response.data || []
       console.log('课程数据已加载')
     } else {
-      ElMessage.error('获取课程列表失败: ' + response.message)
+      ElMessage.error('获取课程列表失败: ' + (response.msg || '未知错误'))
     }
   } catch (error: any) {
     ElMessage.error('获取课程列表失败: ' + error.message)
   } finally {
     loading.value = false
   }
+}
+
+// 获取分类名称
+const getCategoryName = (categoryId: number): string => {
+  const categoryMap: Record<number, string> = {
+    1: '前端开发',
+    2: '后端开发',
+    3: '移动开发',
+    4: '数据库',
+    5: '云计算',
+    6: '人工智能'
+  }
+  return categoryMap[categoryId] || '其他'
+}
+
+// 获取审核状态文本
+const getAuditStatusText = (status: number): string => {
+  const statusMap: Record<number, string> = {
+    0: '待审核',
+    1: '已通过',
+    2: '已拒绝'
+  }
+  return statusMap[status] || '未知'
+}
+
+// 获取审核状态类型
+const getAuditStatusType = (status: number): string => {
+  const typeMap: Record<number, string> = {
+    0: 'warning',
+    1: 'success',
+    2: 'danger'
+  }
+  return typeMap[status] || 'info'
 }
 
 // 导航到创建课程
@@ -123,14 +163,24 @@ onMounted(() => {
       >
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="课程名称" min-width="200" />
-        <el-table-column prop="category" label="分类" width="120" />
-        <el-table-column prop="students" label="学习人数" width="100" />
-        <el-table-column prop="views" label="播放量" width="100" />
-        <el-table-column label="状态" width="100">
+        <el-table-column label="分类" width="120">
           <template #default="{ row }">
-            <el-tag type="success" v-if="row.status === 'published'">已发布</el-tag>
-            <el-tag type="warning" v-else-if="row.status === 'draft'">草稿</el-tag>
-            <el-tag type="info" v-else>审核中</el-tag>
+            {{ getCategoryName(row.categoryId) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="studentCount" label="学习人数" width="100" />
+        <el-table-column label="审核状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getAuditStatusType(row.auditStatus)">
+              {{ getAuditStatusText(row.auditStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="课程状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'warning'">
+              {{ row.status === 1 ? '已上架' : '已下架' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180">
@@ -138,10 +188,15 @@ onMounted(() => {
             {{ new Date(row.createTime).toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <div class="operation-container">
-              <el-button size="small" :icon="View" @click="viewCourseDetail(row.id)">查看</el-button>
+              <el-button 
+                v-if="row.auditStatus === 1" 
+                size="small" 
+                :icon="View" 
+                @click="viewCourseDetail(row.id)"
+              >查看</el-button>
               <el-button size="small" :icon="Edit" @click="goToEditCourse(row.id)">编辑</el-button>
               <el-button size="small" type="danger" :icon="Delete" @click="deleteCourse(row.id)">删除</el-button>
             </div>

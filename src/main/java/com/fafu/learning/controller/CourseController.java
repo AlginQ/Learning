@@ -30,14 +30,17 @@ public class CourseController {
     @GetMapping
     public ApiResult<PageResult<Course>> getCourseList(
             @RequestParam(defaultValue = "1") Long page,
-            @RequestParam(defaultValue = "8") Long size,
+            @RequestParam(defaultValue = "12") Long size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId) {
         try {
             System.out.println("Page: " + page + ", Size: " + size + ", Keyword: " + keyword);
             
-            // 获取所有课程
-            List<Course> allCourses = courseService.list();
+            // 获取所有已上架且审核通过的课程
+            List<Course> allCourses = courseService.list(new QueryWrapper<Course>()
+                .eq("status", 1)
+                .eq("audit_status", 1)
+                .orderByDesc("create_time"));
             
             // 根据keyword过滤课程
             List<Course> filteredCourses = new ArrayList<>();
@@ -49,6 +52,13 @@ public class CourseController {
                 }
             } else {
                 filteredCourses = allCourses;
+            }
+            
+            // 根据categoryId过滤课程
+            if (categoryId != null) {
+                filteredCourses = filteredCourses.stream()
+                    .filter(course -> categoryId.equals(course.getCategoryId()))
+                    .collect(java.util.stream.Collectors.toList());
             }
             
             int total = filteredCourses.size();
@@ -78,22 +88,6 @@ public class CourseController {
     }
     
     /**
-     * 获取课程详情
-     */
-    @GetMapping("/{id}")
-    public ApiResult<Course> getCourseDetail(@PathVariable Long id) {
-        try {
-            Course course = courseService.getById(id);
-            if (course == null) {
-                return ApiResult.notFound("课程不存在");
-            }
-            return ApiResult.success(course);
-        } catch (Exception e) {
-            return ApiResult.fail("获取课程详情失败: " + e.getMessage());
-        }
-    }
-    
-    /**
      * 搜索课程
      */
     @GetMapping("/search")
@@ -115,6 +109,48 @@ public class CourseController {
             return ApiResult.success(pageResult);
         } catch (Exception e) {
             return ApiResult.fail("搜索课程失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取待审核课程列表
+     */
+    @GetMapping("/pending")
+    public ApiResult<List<Course>> getPendingCourses() {
+        try {
+            List<Course> courses = courseService.getPendingCourses();
+            return ApiResult.success(courses);
+        } catch (Exception e) {
+            return ApiResult.fail("获取待审核课程失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取教师课程列表（包含审核状态）
+     */
+    @GetMapping("/teacher/{teacherId}")
+    public ApiResult<List<Course>> getTeacherCourses(@PathVariable Long teacherId) {
+        try {
+            List<Course> courses = courseService.getTeacherCoursesWithAuditStatus(teacherId);
+            return ApiResult.success(courses);
+        } catch (Exception e) {
+            return ApiResult.fail("获取教师课程失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取课程详情
+     */
+    @GetMapping("/{id}")
+    public ApiResult<Course> getCourseDetail(@PathVariable Long id) {
+        try {
+            Course course = courseService.getById(id);
+            if (course == null) {
+                return ApiResult.notFound("课程不存在");
+            }
+            return ApiResult.success(course);
+        } catch (Exception e) {
+            return ApiResult.fail("获取课程详情失败: " + e.getMessage());
         }
     }
 
@@ -191,6 +227,21 @@ public class CourseController {
             return ApiResult.success("课程推荐状态更新成功", course);
         } catch (Exception e) {
             return ApiResult.fail("更新课程推荐状态失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 审核课程
+     */
+    @PutMapping("/{id}/audit")
+    public ApiResult<Void> auditCourse(@PathVariable Long id, @RequestBody Map<String, Integer> requestBody) {
+        try {
+            Integer status = requestBody.get("status");
+            courseService.auditCourse(id, status);
+            String message = status == 1 ? "课程审核通过" : "课程审核拒绝";
+            return ApiResult.success(message, null);
+        } catch (Exception e) {
+            return ApiResult.fail("审核课程失败: " + e.getMessage());
         }
     }
 }

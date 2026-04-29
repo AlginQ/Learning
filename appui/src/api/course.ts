@@ -56,3 +56,18 @@ export const toggleCourseStatusApi = (id: number) => {
 export const toggleCourseRecommendApi = (id: number) => {
   return request.put<ApiResponse<any>>(`/api/courses/${id}/recommend`)
 }
+
+// 获取待审核课程列表
+export const getPendingCoursesApi = () => {
+  return request.get<ApiResponse<Course[]>>('/api/courses/pending')
+}
+
+// 审核课程
+export const auditCourseApi = (id: number, status: number) => {
+  return request.put<ApiResponse<null>>(`/api/courses/${id}/audit`, { status })
+}
+
+// 获取教师课程列表
+export const getTeacherCoursesApi = (teacherId: number) => {
+  return request.get<ApiResponse<Course[]>>(`/api/courses/teacher/${teacherId}`)
+}

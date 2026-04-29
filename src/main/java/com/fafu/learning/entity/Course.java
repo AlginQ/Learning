@@ -89,6 +89,11 @@ public class Course {
     private Integer status;
     
     /**
+     * 审核状态 0-待审核 1-已通过 2-已拒绝
+     */
+    private Integer auditStatus;
+    
+    /**
      * 是否推荐 0-否 1-是
      */
     private Integer recommend;

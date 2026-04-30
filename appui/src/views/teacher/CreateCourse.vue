@@ -78,7 +78,28 @@ const saveCourse = async () => {
       return
     }
     
-    // 构建课程数据
+    // 验证章节数据
+    for (let i = 0; i < chapters.value.length; i++) {
+      const chapter = chapters.value[i]
+      if (!chapter.title || chapter.title.trim() === '') {
+        ElMessage.error(`第 ${i + 1} 个章节标题不能为空`)
+        return
+      }
+      if (!chapter.videoUrl || chapter.videoUrl.trim() === '') {
+        ElMessage.error(`第 ${i + 1} 个章节视频链接不能为空`)
+        return
+      }
+      if (!chapter.duration || chapter.duration.trim() === '') {
+        ElMessage.error(`第 ${i + 1} 个章节视频时长不能为空`)
+        return
+      }
+    }
+    
+    // 获取用户角色
+    const userRole = userStore.userInfo?.role || 'USER'
+    const isAdmin = userRole === 'ADMIN'
+    
+    // 构建课程数据（包含章节）
     const courseData = {
       title: courseForm.title,
       description: courseForm.description,
@@ -89,15 +110,28 @@ const saveCourse = async () => {
       teacherId: userId,
       lessonCount: chapters.value.length,
       introduction: courseForm.description,
-      status: 0,
-      auditStatus: 0
+      // 管理员创建的课程直接上架并审核通过
+      status: isAdmin ? 1 : 0,
+      auditStatus: isAdmin ? 1 : 0,
+      // 添加章节数据
+      lessons: chapters.value.map((chapter, index) => ({
+        title: chapter.title,
+        videoUrl: chapter.videoUrl,
+        duration: convertDurationToSeconds(chapter.duration),
+        lessonNumber: index + 1
+      }))
     }
     
     // 调用API保存课程
     const response = await addCourseApi(courseData)
     if (response.code === 200) {
-      ElMessage.success('课程创建成功，等待管理员审核')
-      router.push('/teacher/courses')
+      if (isAdmin) {
+        ElMessage.success('课程创建成功')
+        router.push('/admin/courses')
+      } else {
+        ElMessage.success('课程创建成功，等待管理员审核')
+        router.push('/teacher/courses')
+      }
     } else {
       ElMessage.error(response.msg || '课程创建失败')
     }
@@ -106,22 +140,61 @@ const saveCourse = async () => {
   }
 }
 
-// 将分类名称转换为分类ID
+// 将时长格式转换为秒数
+// 支持两种格式：
+// 1. 纯数字（直接秒数）：如 "300" -> 300秒
+// 2. 时间格式：如 "05:30" -> 330秒，"01:05:30" -> 3930秒
+const convertDurationToSeconds = (duration: string): number => {
+  // 去除首尾空格
+  const trimmedDuration = duration.trim()
+  
+  // 检查是否为纯数字（直接秒数）
+  if (/^\d+$/.test(trimmedDuration)) {
+    return parseInt(trimmedDuration, 10)
+  }
+  
+  // 检查是否为时间格式
+  const parts = trimmedDuration.split(':')
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10)
+    const seconds = parseInt(parts[1], 10)
+    if (!isNaN(minutes) && !isNaN(seconds)) {
+      return minutes * 60 + seconds
+    }
+  } else if (parts.length === 3) {
+    const hours = parseInt(parts[0], 10)
+    const minutes = parseInt(parts[1], 10)
+    const seconds = parseInt(parts[2], 10)
+    if (!isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
+      return hours * 3600 + minutes * 60 + seconds
+    }
+  }
+  
+  return 0
+}
+
+// 将分类名称转换为分类ID（与数据库中的category表一致）
 const getCategoryId = (categoryName: string): number => {
   const categoryMap: Record<string, number> = {
-    'frontend': 1,
-    'backend': 2,
-    'mobile': 3,
-    'database': 4,
-    'cloud': 5,
-    'ai': 6
+    'frontend': 2,      // 前端开发
+    'backend': 3,       // 后端开发
+    'mobile': 4,        // 移动开发
+    'language': 5,      // 编程语言
+    'database': 6,      // 数据库
+    'ai': 7,            // 人工智能
+    'devops': 8         // 运维技术
   }
-  return categoryMap[categoryName] || 1
+  return categoryMap[categoryName] || 2
 }
 
 // 取消
 const cancel = () => {
-  router.push('/teacher/courses')
+  const userRole = userStore.userInfo?.role || 'USER'
+  if (userRole === 'ADMIN') {
+    router.push('/admin/courses')
+  } else {
+    router.push('/teacher/courses')
+  }
 }
 </script>
 
@@ -161,9 +234,10 @@ const cancel = () => {
             <el-option label="前端开发" value="frontend" />
             <el-option label="后端开发" value="backend" />
             <el-option label="移动开发" value="mobile" />
+            <el-option label="编程语言" value="language" />
             <el-option label="数据库" value="database" />
-            <el-option label="云计算" value="cloud" />
             <el-option label="人工智能" value="ai" />
+            <el-option label="运维技术" value="devops" />
           </el-select>
         </el-form-item>
         
@@ -224,7 +298,7 @@ const cancel = () => {
               </el-form-item>
               
               <el-form-item label="视频时长">
-                <el-input v-model="chapter.duration" placeholder="请输入视频时长（如：05:30）" />
+                <el-input v-model="chapter.duration" placeholder="支持格式：300（秒）或 05:30（分:秒）或 01:05:30（时:分:秒）" />
               </el-form-item>
             </el-form>
           </el-card>

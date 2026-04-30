@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Edit, Delete, Plus } from '@element-plus/icons-vue'
 import {
-  getCourseListApi,
   addCourseApi,
   updateCourseApi,
   deleteCourseApi,
   toggleCourseStatusApi,
   toggleCourseRecommendApi,
   getPendingCoursesApi,
-  auditCourseApi
+  auditCourseApi,
+  getAllApprovedCoursesApi
 } from '@/api/course'
 
 const route = useRoute()
+const router = useRouter()
 
 interface CourseItem {
   id: number
@@ -39,7 +40,7 @@ const dialogVisible = ref(false)
 const editMode = ref(false)
 const currentCourse = ref<Partial<CourseItem>>({})
 const selectedCourses = ref<CourseItem[]>([])
-const activeTab = ref<'all' | 'pending'>('all')
+const activeTab = ref<'all' | 'pending' | 'closed'>('all')
 
 const pagination = ref({
   currentPage: 1,
@@ -57,6 +58,7 @@ const mockCourses: CourseItem[] = [
     discountPrice: 49.00,
     status: 1,
     recommend: 1,
+    auditStatus: 1,
     studentCount: 1234,
     rating: 4.8,
     createTime: '2024-01-01T00:00:00',
@@ -70,6 +72,7 @@ const mockCourses: CourseItem[] = [
     price: 129.00,
     status: 1,
     recommend: 0,
+    auditStatus: 1,
     studentCount: 856,
     rating: 4.6,
     createTime: '2024-01-02T00:00:00',
@@ -84,6 +87,7 @@ const mockCourses: CourseItem[] = [
     discountPrice: 79.00,
     status: 0,
     recommend: 1,
+    auditStatus: 1,
     studentCount: 634,
     rating: 4.7,
     createTime: '2024-01-03T00:00:00',
@@ -92,27 +96,22 @@ const mockCourses: CourseItem[] = [
   }
 ]
 
-// 获取课程列表
+// 获取课程列表（管理员专用，包含上架和下架课程）
 const loadCourses = async () => {
   loading.value = true
   try {
-    // 确保参数类型正确
     const params = {
       page: Number(pagination.value.currentPage),
       size: Number(pagination.value.pageSize),
       keyword: searchKeyword.value
     }
-    console.log('Request params:', params)
-    const response = await getCourseListApi(params)
-    console.log('Response data:', response)
+    console.log('Admin courses params:', params)
+    const response = await getAllApprovedCoursesApi(params)
+    console.log('Admin courses response:', response)
     
-    // 处理后端返回的数据
     if (response && response.data) {
       courses.value = response.data.records || []
-      // 确保total是数字类型
       pagination.value.total = Number(response.data.total) || courses.value.length
-      console.log('Total courses:', courses.value.length)
-      console.log('Pagination total:', pagination.value.total)
     } else {
       courses.value = []
       pagination.value.total = 0
@@ -120,8 +119,7 @@ const loadCourses = async () => {
   } catch (error: any) {
     console.error('Error:', error)
     ElMessage.error('获取课程列表失败: ' + (error.response?.data?.message || error.message))
-    // 即使出错也要设置一个默认的total值，确保分页组件正常显示
-    pagination.value.total = 13
+    pagination.value.total = 0
   } finally {
     loading.value = false
   }
@@ -140,7 +138,23 @@ const handleSearch = () => {
 const resetSearch = () => {
   searchKeyword.value = ''
   pagination.value.currentPage = 1
-  loadCourses()
+  refreshCourses()
+}
+
+// 根据当前标签页刷新课程
+const refreshCourses = () => {
+  pagination.value.currentPage = 1
+  switch (activeTab.value) {
+    case 'all':
+      loadCourses()
+      break
+    case 'pending':
+      loadPendingCourses()
+      break
+    case 'closed':
+      loadClosedCourses()
+      break
+  }
 }
 
 // 过滤课程列表
@@ -148,11 +162,10 @@ const filteredCourses = computed(() => {
   return courses.value
 })
 
-// 添加课程
+// 添加课程 - 直接跳转到教师端的创建课程页面
 const handleAddCourse = () => {
-  editMode.value = false
-  currentCourse.value = {}
-  dialogVisible.value = true
+  // 跳转到教师端的创建课程页面，复用已有的完整功能
+  router.push('/teacher/courses/create')
 }
 
 // 编辑课程
@@ -188,8 +201,8 @@ const handleDeleteCourse = async (course: CourseItem) => {
 
 // 上架/下架课程
 const toggleCourseStatus = async (course: CourseItem) => {
+  const action = course.status === 1 ? '下架' : '上架'
   try {
-    const action = course.status === 1 ? '下架' : '上架'
     await ElMessageBox.confirm(
       `确定要${action}课程 "${course.title}" 吗？`,
       `${action}确认`,
@@ -202,7 +215,7 @@ const toggleCourseStatus = async (course: CourseItem) => {
     
     await toggleCourseStatusApi(course.id)
     ElMessage.success(`${action}课程成功`)
-    loadCourses()
+    refreshCourses()
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(`${action}课程失败: ` + (error.response?.data?.message || error.message))
@@ -212,8 +225,8 @@ const toggleCourseStatus = async (course: CourseItem) => {
 
 // 推荐/取消推荐课程
 const toggleRecommend = async (course: CourseItem) => {
+  const action = course.recommend === 1 ? '取消推荐' : '设为推荐'
   try {
-    const action = course.recommend === 1 ? '取消推荐' : '设为推荐'
     await ElMessageBox.confirm(
       `确定要${action}课程 "${course.title}" 吗？`,
       `${action}确认`,
@@ -248,6 +261,31 @@ const loadPendingCourses = async () => {
     }
   } catch (error: any) {
     ElMessage.error('获取待审核课程失败: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取下架课程
+const loadClosedCourses = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: Number(pagination.value.currentPage),
+      size: Number(pagination.value.pageSize),
+      keyword: searchKeyword.value,
+      status: 0 // 下架状态
+    }
+    const response = await getAllApprovedCoursesApi(params)
+    if (response && response.data) {
+      courses.value = response.data.records || []
+      pagination.value.total = Number(response.data.total) || courses.value.length
+    } else {
+      courses.value = []
+      pagination.value.total = 0
+    }
+  } catch (error: any) {
+    ElMessage.error('获取下架课程失败: ' + (error.response?.data?.message || error.message))
   } finally {
     loading.value = false
   }
@@ -405,6 +443,12 @@ onMounted(() => {
         >
           待审核课程
         </el-button>
+        <el-button 
+          :type="activeTab === 'closed' ? 'primary' : 'default'" 
+          @click="activeTab = 'closed'; loadClosedCourses()"
+        >
+          已下架课程
+        </el-button>
       </div>
       <el-row :gutter="20">
         <el-col :span="8">
@@ -422,7 +466,7 @@ onMounted(() => {
         <el-col :span="16">
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="resetSearch">重置</el-button>
-          <el-button :icon="Refresh" @click="activeTab === 'pending' ? loadPendingCourses() : loadCourses()">刷新</el-button>
+          <el-button :icon="Refresh" @click="refreshCourses()">刷新</el-button>
           <el-button type="success" :icon="Plus" @click="handleAddCourse">
             添加课程
           </el-button>

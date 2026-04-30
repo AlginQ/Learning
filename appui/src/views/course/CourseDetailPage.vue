@@ -20,7 +20,7 @@
         
         <div class="course-basic-info">
           <div class="info-row">
-            <el-tag>{{ course.category.name }}</el-tag>
+            <el-tag>{{ course.category?.name || '未分类' }}</el-tag>
             <el-tag type="success">{{ course.rating }}分</el-tag>
             <el-tag type="warning">{{ course.lessonCount }}课时</el-tag>
             <el-tag type="info">{{ course.studentCount }}人学习</el-tag>
@@ -30,7 +30,7 @@
             <p>{{ course.description }}</p>
           </div>
           
-          <div class="teacher-info">
+          <div class="teacher-info" v-if="course.teacher">
             <el-avatar :src="course.teacher.avatar" :size="40" />
             <span class="teacher-name">{{ course.teacher.name }}</span>
           </div>
@@ -378,6 +378,7 @@ import {
 } from '@element-plus/icons-vue'
 import type { Course, Chapter, Lesson } from '@/types/course'
 import { addStudyRecord } from '@/api/study'
+import { getCourseDetailApi, getCourseChaptersApi } from '@/api/course'
 
 const route = useRoute()
 const router = useRouter()
@@ -387,6 +388,7 @@ const course = ref<Course | null>(null)
 const chapters = ref<Chapter[]>([])
 const activeChapter = ref<number | null>(null)
 const currentLesson = ref<Lesson | null>(null)
+const dataSource = ref<'backend' | 'mock'>('mock') // 追踪数据源
 
 // 播放器相关状态
 const isPlaying = ref(false)
@@ -1348,7 +1350,9 @@ const stopRecordTimer = () => {
 const updateTime = () => {
   if (videoElement.value && currentLesson.value) {
     currentTime.value = videoElement.value.currentTime
-    currentProgress.value = Math.round((currentTime.value / currentLesson.value.duration) * 100)
+    // 防止除以零
+    const duration = currentLesson.value.duration || 1
+    currentProgress.value = Math.round((currentTime.value / duration) * 100)
   }
 }
 
@@ -1410,32 +1414,94 @@ const handleFullscreenChange = () => {
 
 // 添加全屏变化监听器
 onMounted(() => {
-  // 模拟 API 调用
-  setTimeout(() => {
-    const id = parseInt(courseId)
-    const courseData = getCourseById(id)
-    const chaptersData = getChaptersByCourseId(id)
+  const id = parseInt(courseId)
+  
+  // 从后端获取课程详情
+  getCourseDetailApi(id).then(response => {
+    console.log('=== 课程详情API响应 ===')
+    console.log('完整响应:', response)
+    console.log('response.data:', response?.data)
+    console.log('response.data.id:', response?.data?.id)
+    console.log('条件判断结果:', response && response.data && response.data.id)
     
+    // response 已经是 ApiResult 对象，response.data 是课程数据
+    if (response && response.data && response.data.id) {
+      course.value = response.data
+      dataSource.value = 'backend' // 设置数据源为后端
+      console.log('✅ 使用后端真实数据:', course.value.title)
+    } else {
+      // 如果后端没有数据，使用模拟数据
+      const courseData = getCourseById(id)
+      if (courseData) {
+        course.value = courseData
+        dataSource.value = 'mock' // 设置数据源为模拟数据
+        console.log('⚠️ 使用模拟数据:', courseData.title)
+      } else {
+        console.log('❌ 没有找到任何数据')
+      }
+    }
+  }).catch(error => {
+    console.error('获取课程详情失败:', error)
+    // 使用模拟数据作为后备
+    const courseData = getCourseById(id)
     if (courseData) {
       course.value = courseData
-      chapters.value = chaptersData
+      dataSource.value = 'mock' // 设置数据源为模拟数据
+      console.log('⚠️ 请求失败，使用模拟数据:', courseData.title)
+    }
+  })
+  
+  // 从后端获取章节和课时
+  getCourseChaptersApi(id).then(response => {
+    // response 已经是 ApiResult 对象，response.data 是章节数据
+    if (response && response.data && response.data.length > 0) {
+      chapters.value = response.data
+      console.log('获取章节数据成功:', chapters.value)
       
       // 加载课程学习进度
       loadLearningProgress(id)
       
-      if (chaptersData.length > 0) {
-        activeChapter.value = chaptersData[0].id
+      if (chapters.value.length > 0) {
+        activeChapter.value = chapters.value[0].id
         // 默认选择第一个免费课程
-        const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
+        const firstFreeLesson = chapters.value[0].lessons.find(lesson => lesson.isFree)
         if (firstFreeLesson) {
           currentLesson.value = firstFreeLesson
           // 加载课时进度
           currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
         }
       }
+    } else {
+      // 如果后端没有数据，使用模拟数据
+      const chaptersData = getChaptersByCourseId(id)
+      chapters.value = chaptersData
+      
+      if (chaptersData.length > 0) {
+        activeChapter.value = chaptersData[0].id
+        const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
+        if (firstFreeLesson) {
+          currentLesson.value = firstFreeLesson
+          currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
+        }
+      }
     }
     startProgressTimer()
-  }, 1000)
+  }).catch(error => {
+    console.error('获取章节数据失败:', error)
+    // 使用模拟数据作为后备
+    const chaptersData = getChaptersByCourseId(id)
+    chapters.value = chaptersData
+    
+    if (chaptersData.length > 0) {
+      activeChapter.value = chaptersData[0].id
+      const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
+      if (firstFreeLesson) {
+        currentLesson.value = firstFreeLesson
+        currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
+      }
+    }
+    startProgressTimer()
+  })
   
   // 添加全局键盘监听
   window.addEventListener('keydown', (e) => {
@@ -1621,8 +1687,9 @@ const startProgressTimer = () => {
   
   progressInterval = window.setInterval(() => {
     if (isPlaying.value && currentLesson.value && course.value) {
-      currentTime.value = Math.min(currentLesson.value.duration, currentTime.value + 1)
-      currentProgress.value = Math.round((currentTime.value / currentLesson.value.duration) * 100)
+      const duration = currentLesson.value.duration || 1
+      currentTime.value = Math.min(duration, currentTime.value + 1)
+      currentProgress.value = Math.round((currentTime.value / duration) * 100)
       
       // 模拟学习时长增加
       if (currentTime.value % 60 === 0) {

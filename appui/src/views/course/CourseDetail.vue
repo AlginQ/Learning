@@ -17,7 +17,7 @@
           <p>{{ course.description }}</p>
         </div>
         <div class="course-meta">
-          <el-tag>{{ course.category.name }}</el-tag>
+          <el-tag>{{ course.category?.name || '未分类' }}</el-tag>
           <el-tag type="success">{{ course.rating }}分</el-tag>
           <el-tag type="warning">{{ course.lessonCount }}课时</el-tag>
         </div>
@@ -75,6 +75,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { VideoPlay } from '@element-plus/icons-vue'
 import type { Course, Chapter } from '@/types/course'
+import { getCourseDetailApi, getCourseChaptersApi } from '@/api/course'
 
 const route = useRoute()
 const router = useRouter()
@@ -163,17 +164,35 @@ const startLesson = (lesson: any) => {
 }
 
 onMounted(() => {
-  console.log('Course ID:', courseId)
-  // 模拟 API 调用
-  setTimeout(() => {
-    course.value = mockCourse
-    chapters.value = mockChapters
-    if (mockChapters.length > 0) {
-      activeChapter.value = mockChapters[0].id.toString()
+  const id = parseInt(courseId)
+  
+  // 优先从后端获取课程详情
+  getCourseDetailApi(id).then(response => {
+    if (response && response.data && response.data.id) {
+      course.value = response.data
+    } else {
+      // 使用模拟数据作为后备
+      course.value = mockCourse
     }
-    console.log('Course data:', course.value)
-    console.log('Chapters data:', chapters.value)
-  }, 1000)
+  }).catch(error => {
+    course.value = mockCourse
+  })
+  
+  // 优先从后端获取章节数据
+  getCourseChaptersApi(id).then(response => {
+    if (response && response.data && response.data.length > 0) {
+      chapters.value = response.data
+    } else {
+      chapters.value = mockChapters
+    }
+  }).catch(error => {
+    chapters.value = mockChapters
+  }).finally(() => {
+    // 设置默认展开的章节
+    if (chapters.value.length > 0) {
+      activeChapter.value = chapters.value[0].id.toString()
+    }
+  })
 })
 </script>
 

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 课程实体类
@@ -109,4 +110,10 @@ public class Course {
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+    
+    /**
+     * 章节列表（临时字段，不映射数据库）
+     */
+    @TableField(exist = false)
+    private List<Lesson> lessons;
 }

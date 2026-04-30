@@ -47,15 +47,17 @@ const loadCourses = async () => {
   }
 }
 
-// 获取分类名称
+// 获取分类名称（与数据库category表一致）
 const getCategoryName = (categoryId: number): string => {
   const categoryMap: Record<number, string> = {
-    1: '前端开发',
-    2: '后端开发',
-    3: '移动开发',
-    4: '数据库',
-    5: '云计算',
-    6: '人工智能'
+    1: '全部',
+    2: '前端开发',
+    3: '后端开发',
+    4: '移动开发',
+    5: '编程语言',
+    6: '数据库',
+    7: '人工智能',
+    8: '运维技术'
   }
   return categoryMap[categoryId] || '其他'
 }

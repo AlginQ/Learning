@@ -3,6 +3,7 @@ package com.fafu.learning.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 课程章节实体类
@@ -48,4 +49,10 @@ public class Chapter {
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+    
+    /**
+     * 课时列表（临时字段，不映射数据库）
+     */
+    @TableField(exist = false)
+    private List<Lesson> lessons;
 }

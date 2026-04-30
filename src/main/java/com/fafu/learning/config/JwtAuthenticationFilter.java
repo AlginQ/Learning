@@ -102,13 +102,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 白名单配置逻辑：
      * 1. 放行登录接口 /api/auth/login
      * 2. 放行注册接口 /api/auth/register
-     * 3. 可以扩展其他不需要认证的接口
+     * 3. 放行静态资源（图片、视频等）
+     * 4. 可以扩展其他不需要认证的接口
      * 
      * @param requestURI 请求URI
      * @return boolean true表示跳过认证，false表示需要认证
      */
     private boolean shouldSkipAuthentication(String requestURI) {
         // 白名单配置：这些接口不需要JWT认证
-        return requestURI.equals("/api/auth/login") || requestURI.equals("/api/auth/register");
+        if (requestURI.equals("/api/auth/login") || requestURI.equals("/api/auth/register")) {
+            return true;
+        }
+        
+        // 放行静态资源
+        if (requestURI.startsWith("/images/") || requestURI.startsWith("/videos/") || 
+            requestURI.startsWith("/css/") || requestURI.startsWith("/js/")) {
+            return true;
+        }
+        
+        return false;
     }
 }

@@ -165,10 +165,10 @@ router.beforeEach((to, from, next) => {
     }
   }
   
-  // 对 /teacher/** 路径做权限校验
+  // 对 /teacher/** 路径做权限校验（管理员也可以访问）
   if (to.path.startsWith('/teacher')) {
-    // 检查用户角色是否为TEACHER
-    if (userRole !== 'TEACHER') {
+    // 检查用户角色是否为TEACHER或ADMIN
+    if (userRole !== 'TEACHER' && userRole !== 'ADMIN') {
       ElMessage.error('无教师权限')
       next('/')
       return

@@ -148,9 +148,10 @@ onMounted(() => {
             <el-option label="前端开发" value="frontend" />
             <el-option label="后端开发" value="backend" />
             <el-option label="移动开发" value="mobile" />
+            <el-option label="编程语言" value="language" />
             <el-option label="数据库" value="database" />
-            <el-option label="云计算" value="cloud" />
             <el-option label="人工智能" value="ai" />
+            <el-option label="运维技术" value="devops" />
           </el-select>
         </el-form-item>
         

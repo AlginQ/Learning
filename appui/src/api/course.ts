@@ -27,6 +27,11 @@ export const getCourseLessonsApi = (courseId: number) => {
   return request.get<ApiResponse<any>>(`/api/courses/${courseId}/lessons`)
 }
 
+// 获取课程章节和课时
+export const getCourseChaptersApi = (courseId: number) => {
+  return request.get<ApiResponse<any>>(`/api/courses/${courseId}/chapters`)
+}
+
 // 获取教师列表
 export const getTeacherListApi = () => {
   return request.get<ApiResponse<any[]>>('/api/teachers')
@@ -59,7 +64,7 @@ export const toggleCourseRecommendApi = (id: number) => {
 
 // 获取待审核课程列表
 export const getPendingCoursesApi = () => {
-  return request.get<ApiResponse<Course[]>>('/api/courses/pending')
+  return request.get<ApiResponse<any[]>>('/api/courses/pending')
 }
 
 // 审核课程
@@ -70,4 +75,9 @@ export const auditCourseApi = (id: number, status: number) => {
 // 获取教师课程列表
 export const getTeacherCoursesApi = (teacherId: number) => {
   return request.get<ApiResponse<Course[]>>(`/api/courses/teacher/${teacherId}`)
+}
+
+// 获取所有审核通过的课程（管理员专用，包含下架课程）
+export const getAllApprovedCoursesApi = (params: PageRequest & { keyword?: string; status?: number }) => {
+  return request.get<ApiPageResponse<any>>('/api/courses/all', params)
 }

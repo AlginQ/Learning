@@ -182,8 +182,9 @@ public class StudyRecordController {
                 token = token.substring(7);
                 Long userId = jwtUtil.getUserIdFromToken(token);
                 if (userId != null) {
+                    // 默认查询所有历史记录，不再限制30天
                     LocalDateTime startTime = startDate != null ? 
-                        LocalDateTime.parse(startDate) : LocalDateTime.now().minusDays(30);
+                        LocalDateTime.parse(startDate) : LocalDateTime.of(2000, 1, 1, 0, 0);
                     LocalDateTime endTime = endDate != null ? 
                         LocalDateTime.parse(endDate) : LocalDateTime.now();
                     

@@ -157,6 +157,9 @@
                                 </div>
                                               
                                 <div class="right-controls">
+                                  <el-button size="small" plain @click="toggleFavorite">
+                                    <el-icon><Star :class="{ filled: isFavorite }" /></el-icon>
+                                  </el-button>
                                   <el-button size="small" plain>
                                     <el-icon><Setting /></el-icon>
                                   </el-button>
@@ -379,6 +382,7 @@ import {
 import type { Course, Chapter, Lesson } from '@/types/course'
 import { addStudyRecord } from '@/api/study'
 import { getCourseDetailApi, getCourseChaptersApi } from '@/api/course'
+import { addFavoriteApi, removeFavoriteApi, getFavoriteStatusApi } from '@/api/favorite'
 
 const route = useRoute()
 const router = useRouter()
@@ -1314,8 +1318,11 @@ const reportStudyRecord = async () => {
       progress: typeof payload.progress
     })
     
-    // 确保所有参数都有值
-    if (!payload.courseId || !payload.lessonId || !payload.duration || !payload.progress) {
+    // 确保所有参数都有值（注意：0 是有效的ID值）
+    if (payload.courseId === undefined || payload.courseId === null || 
+        payload.lessonId === undefined || payload.lessonId === null || 
+        payload.duration === undefined || payload.duration === null || 
+        payload.progress === undefined || payload.progress === null) {
       console.error('上报学习记录失败: 参数不完整')
       return
     }
@@ -1513,6 +1520,9 @@ onMounted(() => {
   
   // 添加全屏变化监听器
   document.addEventListener('fullscreenchange', handleFullscreenChange)
+  
+  // 加载收藏状态
+  loadFavoriteStatus()
 })
 
 onUnmounted(() => {
@@ -1526,9 +1536,51 @@ const togglePictureInPicture = () => {
 }
 
 // 学习互动功能
-const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value
-  ElMessage.success(isFavorite.value ? '收藏成功' : '取消收藏')
+const toggleFavorite = async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  
+  try {
+    if (isFavorite.value) {
+      const response = await removeFavoriteApi(Number(courseId))
+      if (response.code === 200) {
+        isFavorite.value = false
+        ElMessage.success('取消收藏成功')
+      }
+    } else {
+      const response = await addFavoriteApi(Number(courseId))
+      if (response.code === 200) {
+        isFavorite.value = true
+        ElMessage.success('收藏成功')
+      }
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    ElMessage.error('操作失败')
+  }
+}
+
+// 加载收藏状态
+const loadFavoriteStatus = async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    isFavorite.value = false
+    return
+  }
+  
+  try {
+    const response = await getFavoriteStatusApi(Number(courseId))
+    if (response.code === 200) {
+      isFavorite.value = response.data?.isFavorite || false
+    }
+  } catch (error) {
+    console.error('获取收藏状态失败:', error)
+    isFavorite.value = false
+  }
 }
 
 const shareCourse = () => {
@@ -2123,6 +2175,12 @@ const stopProgressTimer = () => {
   color: white;
   font-size: 14px;
   margin-left: 10px;
+}
+
+/* 收藏图标样式 */
+.el-icon .filled,
+.el-icon.filled {
+  color: #ffd700;
 }
 
 /* 播放按钮覆盖层 */

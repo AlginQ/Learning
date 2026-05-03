@@ -16,6 +16,10 @@
         <div class="stat-label">已完成课程</div>
       </div>
       <div class="stat-card">
+        <div class="stat-number">{{ stats.favoritedCount }}</div>
+        <div class="stat-label">已收藏课程</div>
+      </div>
+      <div class="stat-card">
         <div class="stat-number">{{ formatDuration(stats.totalDuration) }}</div>
         <div class="stat-label">总学习时长</div>
       </div>
@@ -86,6 +90,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getUserStudyRecords } from '@/api/study'
+import { getUserFavoritesApi, type FavoriteItem } from '@/api/favorite'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -97,6 +102,9 @@ const filters = [
   { label: '已收藏', value: 'favorited' }
 ]
 
+// 收藏数据
+const favorites = ref<FavoriteItem[]>([])
+
 // 当前选中的筛选标签
 const activeFilter = ref('learning')
 
@@ -107,6 +115,7 @@ const courses = ref<any[]>([])
 const stats = reactive({
   learningCount: 0,
   completedCount: 0,
+  favoritedCount: 0,
   totalDuration: 0 // 分钟
 })
 
@@ -121,21 +130,24 @@ const loadCoursesFromApi = async () => {
   
   loading.value = true
   try {
-    // 获取用户学习记录
-    const response = await getUserStudyRecords()
-    if (response.code === 200 && response.data) {
-      const records = response.data
-      
-      // 按课程ID分组
-      const courseMap: Record<number, any> = {}
-      
+    // 同时获取学习记录和收藏数据
+    const [studyResponse, favoriteResponse] = await Promise.all([
+      getUserStudyRecords(),
+      getUserFavoritesApi()
+    ])
+    
+    // 按课程ID分组
+    const courseMap: Record<number, any> = {}
+    
+    // 处理学习记录
+    if (studyResponse.code === 200 && studyResponse.data) {
+      const records = studyResponse.data
       records.forEach((record: any) => {
         if (!courseMap[record.courseId]) {
-          // 生成随机种子
           const randomSeed = Math.floor(Math.random() * 1000)
           courseMap[record.courseId] = {
             id: record.courseId,
-            title: record.courseTitle,
+            title: record.courseTitle || '未知课程',
             coverImage: record.courseCover || `https://picsum.photos/400/225?random=${randomSeed}`,
             progress: 0,
             totalDuration: 0,
@@ -147,19 +159,17 @@ const loadCoursesFromApi = async () => {
         courseMap[record.courseId].totalDuration += record.duration || 0
       })
       
-      // 计算每个课程的进度
+      // 计算每个学习课程的进度
       Object.values(courseMap).forEach((course: any) => {
         if (course.lessons.length > 0) {
           const completedLessons = course.lessons.filter((lesson: any) => lesson.progress === 100).length
           course.progress = Math.round((completedLessons / course.lessons.length) * 100)
           
-          // 获取最后学习时间
           const lastLesson = course.lessons.sort((a: any, b: any) => 
             new Date(b.studyTime).getTime() - new Date(a.studyTime).getTime()
           )[0]
           course.lastStudyTime = lastLesson ? new Date(lastLesson.studyTime).toLocaleString() : '从未学习'
           
-          // 计算学习状态
           course.status = course.progress >= 100 ? 'completed' : 'learning'
         } else {
           course.progress = 0
@@ -167,13 +177,47 @@ const loadCoursesFromApi = async () => {
           course.status = 'learning'
         }
       })
-      
-      // 转换为数组
-      courses.value = Object.values(courseMap)
-      
-      // 更新统计数据
-      updateStats()
     }
+    
+    // 处理收藏数据
+    if (favoriteResponse.code === 200 && favoriteResponse.data) {
+      favorites.value = favoriteResponse.data
+      
+      favoriteResponse.data.forEach((item: any) => {
+        const courseId = item.courseId || item.course_id
+        if (!courseMap[courseId]) {
+          // 如果收藏的课程不在学习记录中，添加到课程列表
+          const randomSeed = Math.floor(Math.random() * 1000)
+          courseMap[courseId] = {
+            id: courseId,
+            title: item.courseTitle || item.course_title || '未知课程',
+            coverImage: item.courseCover || item.course_cover || `https://picsum.photos/400/225?random=${randomSeed}`,
+            progress: 0,
+            totalDuration: 0,
+            lessons: [],
+            lastStudyTime: '从未学习',
+            status: 'favorited',
+            isFavorite: true
+          }
+        } else {
+          // 如果课程已在学习记录中，标记为收藏
+          courseMap[courseId].isFavorite = true
+        }
+      })
+    }
+    
+    // 为所有课程设置 isFavorite 属性（未收藏的设为 false）
+    Object.values(courseMap).forEach((course: any) => {
+      if (course.isFavorite === undefined) {
+        course.isFavorite = false
+      }
+    })
+    
+    // 转换为数组
+    courses.value = Object.values(courseMap)
+    
+    // 更新统计数据
+    updateStats()
   } catch (error) {
     console.error('获取课程数据失败:', error)
   } finally {
@@ -185,10 +229,12 @@ const loadCoursesFromApi = async () => {
 const updateStats = () => {
   const learningCount = courses.value.filter(course => course.status === 'learning').length
   const completedCount = courses.value.filter(course => course.status === 'completed').length
+  const favoritedCount = favorites.value.length
   const totalDuration = Math.round(courses.value.reduce((total, course) => total + (course.totalDuration || 0), 0) / 60) // 转换为分钟
   
   stats.learningCount = learningCount
   stats.completedCount = completedCount
+  stats.favoritedCount = favoritedCount
   stats.totalDuration = totalDuration
 }
 
@@ -205,7 +251,7 @@ const filteredCourses = computed(() => {
     } else if (activeFilter.value === 'completed') {
       return course.status === 'completed'
     } else if (activeFilter.value === 'favorited') {
-      return course.status === 'favorited'
+      return course.isFavorite === true
     }
     return true
   })

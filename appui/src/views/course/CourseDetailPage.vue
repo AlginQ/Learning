@@ -385,6 +385,7 @@ import { addStudyRecord } from '@/api/study'
 import { getCourseDetailApi, getCourseChaptersApi } from '@/api/course'
 import { addFavoriteApi, removeFavoriteApi, getFavoriteStatusApi } from '@/api/favorite'
 import { addCommentApi, getCommentsByCourseIdApi, likeCommentApi, type CommentItem } from '@/api/comment'
+import { getProgressApi, saveProgressApi, type StudyProgress } from '@/api/progress'
 
 const route = useRoute()
 const router = useRouter()
@@ -452,16 +453,48 @@ const saveLearningProgress = (courseId: number) => {
   }
 }
 
-// 保存当前课时进度
-const saveLessonProgress = (courseId: number, lessonId: number, time: number) => {
+// 保存当前课时进度（同时保存到数据库和localStorage）
+const saveLessonProgress = async (courseId: number, lessonId: number, time: number) => {
   const storedLessonProgress = localStorage.getItem(`lesson_progress_${courseId}`)
   const lessonProgress = storedLessonProgress ? JSON.parse(storedLessonProgress) : {}
   lessonProgress[lessonId] = time
   localStorage.setItem(`lesson_progress_${courseId}`, JSON.stringify(lessonProgress))
+  
+  // 如果用户已登录，同步保存到数据库
+  const token = localStorage.getItem('token')
+  if (token && currentLesson.value) {
+    const duration = currentLesson.value.duration || 1
+    const progress = Math.round((time / duration) * 100)
+    const isCompleted = progress >= 90
+    
+    try {
+      await saveProgressApi(lessonId, progress, Math.round(time), isCompleted)
+      console.log('进度已同步到数据库')
+    } catch (error) {
+      console.error('保存进度到数据库失败:', error)
+    }
+  }
 }
 
-// 加载当前课时进度
-const loadLessonProgress = (courseId: number, lessonId: number) => {
+// 加载当前课时进度（优先从数据库获取）
+const loadLessonProgress = async (courseId: number, lessonId: number): Promise<number> => {
+  // 如果用户已登录，先从数据库获取
+  const token = localStorage.getItem('token')
+  if (token) {
+    try {
+      const response = await getProgressApi(lessonId)
+      if (response.code === 200 && response.data) {
+        const progress = response.data as StudyProgress
+        const savedTime = progress.watchDuration || 0
+        console.log('从数据库加载进度:', savedTime)
+        return savedTime
+      }
+    } catch (error) {
+      console.error('从数据库加载进度失败，使用localStorage:', error)
+    }
+  }
+  
+  // 从localStorage加载
   const storedLessonProgress = localStorage.getItem(`lesson_progress_${courseId}`)
   if (storedLessonProgress) {
     try {
@@ -1472,7 +1505,13 @@ onMounted(() => {
         if (firstFreeLesson) {
           currentLesson.value = firstFreeLesson
           // 加载课时进度
-          currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
+          loadLessonProgress(id, firstFreeLesson.id).then(savedTime => {
+            currentTime.value = savedTime
+            // 将进度应用到视频播放器上
+            if (videoElement.value) {
+              videoElement.value.currentTime = currentTime.value
+            }
+          })
         }
       }
     } else {
@@ -1485,7 +1524,13 @@ onMounted(() => {
         const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
         if (firstFreeLesson) {
           currentLesson.value = firstFreeLesson
-          currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
+          loadLessonProgress(id, firstFreeLesson.id).then(savedTime => {
+            currentTime.value = savedTime
+            // 将进度应用到视频播放器上
+            if (videoElement.value) {
+              videoElement.value.currentTime = currentTime.value
+            }
+          })
         }
       }
     }
@@ -1501,7 +1546,13 @@ onMounted(() => {
       const firstFreeLesson = chaptersData[0].lessons.find(lesson => lesson.isFree)
       if (firstFreeLesson) {
         currentLesson.value = firstFreeLesson
-        currentTime.value = loadLessonProgress(id, firstFreeLesson.id)
+        loadLessonProgress(id, firstFreeLesson.id).then(savedTime => {
+          currentTime.value = savedTime
+          // 将进度应用到视频播放器上
+          if (videoElement.value) {
+            videoElement.value.currentTime = currentTime.value
+          }
+        })
       }
     }
     startProgressTimer()
@@ -1728,13 +1779,18 @@ const goBack = () => {
 }
 
 // 选择课程
-const selectLesson = (lesson: Lesson, chapter: Chapter) => {
+const selectLesson = async (lesson: Lesson, chapter: Chapter) => {
   currentLesson.value = lesson
   activeChapter.value = chapter.id
   
   // 加载该课时的保存进度
   if (course.value) {
-    currentTime.value = loadLessonProgress(course.value.id, lesson.id)
+    const savedTime = await loadLessonProgress(course.value.id, lesson.id)
+    currentTime.value = savedTime
+    // 将进度应用到视频播放器上
+    if (videoElement.value) {
+      videoElement.value.currentTime = currentTime.value
+    }
   }
   
   ElMessage.success(`开始学习: ${lesson.title}`)

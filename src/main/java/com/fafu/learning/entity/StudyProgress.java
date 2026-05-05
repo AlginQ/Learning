@@ -1,61 +1,41 @@
 package com.fafu.learning.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
-/**
- * 学习进度实体类
- */
 @Data
 @TableName("study_progress")
 public class StudyProgress {
     
-    /**
-     * 进度ID
-     */
     @TableId(type = IdType.AUTO)
     private Long id;
     
-    /**
-     * 用户ID
-     */
+    @TableField("user_id")
     private Long userId;
     
-    /**
-     * 课时ID
-     */
+    @TableField("lesson_id")
     private Long lessonId;
     
-    /**
-     * 学习进度百分比 0-100
-     */
+    @TableField("progress")
     private Integer progress;
     
-    /**
-     * 已观看时长（秒）
-     */
+    @TableField("watch_duration")
     private Integer watchDuration;
     
-    /**
-     * 是否完成 0-未完成 1-已完成
-     */
+    @TableField("is_completed")
     private Integer isCompleted;
     
-    /**
-     * 最后学习时间
-     */
+    @TableField("last_study_time")
     private LocalDateTime lastStudyTime;
     
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
+    @TableField("create_time")
     private LocalDateTime createTime;
     
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @TableField("update_time")
     private LocalDateTime updateTime;
 }

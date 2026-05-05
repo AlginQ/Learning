@@ -294,10 +294,11 @@
               class="comment-item"
             >
               <div class="comment-header">
-                <el-avatar :src="comment.avatar" :size="32" />
+                <el-avatar :size="32">{{ comment.username?.charAt(0) }}</el-avatar>
                 <div class="comment-user-info">
-                  <span class="comment-author">{{ comment.author }}</span>
-                  <span class="comment-time">{{ comment.time }}</span>
+                  <span class="comment-author">{{ comment.username }}</span>
+                  <el-rate v-if="comment.rating" :value="comment.rating" disabled :show-score="false" />
+                  <span class="comment-time">{{ comment.createTime }}</span>
                 </div>
               </div>
               <div class="comment-content">
@@ -383,11 +384,12 @@ import type { Course, Chapter, Lesson } from '@/types/course'
 import { addStudyRecord } from '@/api/study'
 import { getCourseDetailApi, getCourseChaptersApi } from '@/api/course'
 import { addFavoriteApi, removeFavoriteApi, getFavoriteStatusApi } from '@/api/favorite'
+import { addCommentApi, getCommentsByCourseIdApi, likeCommentApi, type CommentItem } from '@/api/comment'
 
 const route = useRoute()
 const router = useRouter()
 
-const courseId = route.params.id as string
+const courseId = ref(parseInt(route.params.id as string) || 0)
 const course = ref<Course | null>(null)
 const chapters = ref<Chapter[]>([])
 const activeChapter = ref<number | null>(null)
@@ -1222,24 +1224,19 @@ const getChaptersByCourseId = (courseId: number): Chapter[] => {
   ]
 }
 
-const comments = ref([
-  {
-    id: 1,
-    author: '学习者A',
-    avatar: '',
-    content: '这个课程讲得很清楚，特别是响应式系统的部分，让我对Vue的理解更深了！',
-    time: '2小时前',
-    likes: 15
-  },
-  {
-    id: 2,
-    author: '前端小白',
-    avatar: '',
-    content: '请问老师，Vue 3和Vue 2的主要区别是什么？',
-    time: '1天前',
-    likes: 8
+const comments = ref<CommentItem[]>([])
+
+// 加载评论列表
+const loadComments = async () => {
+  try {
+    const response = await getCommentsByCourseIdApi(courseId.value)
+    if (response.code === 200 && response.data) {
+      comments.value = response.data
+    }
+  } catch (error) {
+    console.error('获取评论失败:', error)
   }
-])
+}
 
 const relatedCourses = ref([
   {
@@ -1421,7 +1418,7 @@ const handleFullscreenChange = () => {
 
 // 添加全屏变化监听器
 onMounted(() => {
-  const id = parseInt(courseId)
+  const id = courseId.value
   
   // 从后端获取课程详情
   getCourseDetailApi(id).then(response => {
@@ -1510,6 +1507,9 @@ onMounted(() => {
     startProgressTimer()
   })
   
+  // 加载评论列表
+  loadComments()
+  
   // 添加全局键盘监听
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -1546,13 +1546,13 @@ const toggleFavorite = async () => {
   
   try {
     if (isFavorite.value) {
-      const response = await removeFavoriteApi(Number(courseId))
+      const response = await removeFavoriteApi(courseId.value)
       if (response.code === 200) {
         isFavorite.value = false
         ElMessage.success('取消收藏成功')
       }
     } else {
-      const response = await addFavoriteApi(Number(courseId))
+      const response = await addFavoriteApi(courseId.value)
       if (response.code === 200) {
         isFavorite.value = true
         ElMessage.success('收藏成功')
@@ -1573,7 +1573,7 @@ const loadFavoriteStatus = async () => {
   }
   
   try {
-    const response = await getFavoriteStatusApi(Number(courseId))
+    const response = await getFavoriteStatusApi(courseId.value)
     if (response.code === 200) {
       isFavorite.value = response.data?.isFavorite || false
     }
@@ -1642,26 +1642,35 @@ const getLessonStatusIcon = (lesson: Lesson) => {
 }
 
 // 评论功能
-const submitComment = () => {
-  if (newComment.value.trim()) {
-    comments.value.unshift({
-      id: comments.value.length + 1,
-      author: '我',
-      avatar: '',
-      content: newComment.value,
-      time: '刚刚',
-      likes: 0
-    })
-    newComment.value = ''
-    ElMessage.success('评论发布成功')
+const submitComment = async () => {
+  if (!newComment.value.trim()) return
+  
+  try {
+    const response = await addCommentApi(courseId.value, newComment.value)
+    if (response.code === 200) {
+      await loadComments()
+      newComment.value = ''
+      ElMessage.success('评论发布成功')
+    } else {
+      ElMessage.error('评论失败')
+    }
+  } catch (error) {
+    console.error('提交评论失败:', error)
+    ElMessage.error('评论失败')
   }
 }
 
-const likeComment = (commentId: number) => {
-  const comment = comments.value.find(c => c.id === commentId)
-  if (comment) {
-    comment.likes += 1
-    ElMessage.success('点赞成功')
+const likeComment = async (commentId: number) => {
+  try {
+    const response = await likeCommentApi(commentId)
+    if (response.code === 200) {
+      const comment = comments.value.find(c => c.id === commentId)
+      if (comment) {
+        comment.likes += 1
+      }
+    }
+  } catch (error) {
+    console.error('点赞失败:', error)
   }
 }
 

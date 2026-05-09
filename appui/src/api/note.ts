@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import type { ApiResponse } from '@/types/api'
-import type { Note } from '@/types/note'
+import type { Note, NoteForm } from '@/types/note'
 
 // 获取笔记列表
 export const getNotesApi = (params: { courseId?: number; keyword?: string }) => {
@@ -13,12 +13,12 @@ export const getNoteApi = (id: number) => {
 }
 
 // 创建笔记
-export const createNoteApi = (note: Note) => {
+export const createNoteApi = (note: NoteForm) => {
   return request.post<ApiResponse<Note>>('/api/notes', note)
 }
 
 // 更新笔记
-export const updateNoteApi = (id: number, note: Note) => {
+export const updateNoteApi = (id: number, note: NoteForm) => {
   return request.put<ApiResponse<Note>>(`/api/notes/${id}`, note)
 }
 

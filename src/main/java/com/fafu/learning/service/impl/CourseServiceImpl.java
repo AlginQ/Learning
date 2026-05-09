@@ -87,9 +87,11 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                         
                         int lessonResult = lessonMapper.insert(lesson);
                         System.out.println("课时插入结果: " + lessonResult);
+                        System.out.println("课时ID(数据库自增): " + lesson.getId());
+                        System.out.println("课时序号(lessonNumber): " + lesson.getLessonNumber());
                         
                         if (lessonResult > 0) {
-                            System.out.println("保存课时成功: " + lesson.getTitle() + ", 视频URL: " + lesson.getVideoUrl() + ", 时长: " + lesson.getDuration());
+                            System.out.println("保存课时成功: " + lesson.getTitle() + ", ID: " + lesson.getId() + ", 视频URL: " + lesson.getVideoUrl() + ", 时长: " + lesson.getDuration());
                         } else {
                             System.err.println("保存课时失败");
                         }

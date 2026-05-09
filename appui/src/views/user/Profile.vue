@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElDialog, ElForm, ElFormItem, ElInput, ElButton } from 'element-plus'
+import type { FormRules } from 'element-plus'
 import { User, Edit, Camera, Lock, VideoPlay, DataAnalysis, Collection, Document, Upload, Refresh, UserFilled } from '@element-plus/icons-vue'
 import { updateUserProfile, updateUserAvatar, changePassword, applyForTeacherApi } from '@/api/auth'
 
@@ -12,6 +13,7 @@ const activeTab = ref('profile')
 const loading = ref(false)
 const avatarLoading = ref(false)
 const teacherApplyFormRef = ref()
+const passwordFormRef = ref()
 
 // 个人信息表单
 const profileForm = reactive({
@@ -56,7 +58,7 @@ const teacherApplyForm = reactive({
   qualification: ''
 })
 
-const teacherApplyRules = {
+const teacherApplyRules: FormRules = {
   realName: [
     { required: true, message: '请输入真实姓名', trigger: 'blur' },
     { max: 50, message: '姓名长度不能超过50位', trigger: 'blur' }
@@ -73,7 +75,7 @@ const teacherApplyRules = {
 }
 
 // 表单验证规则
-const profileRules = {
+const profileRules: FormRules = {
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
     { max: 50, message: '昵称长度不能超过50位', trigger: 'blur' }
@@ -84,7 +86,7 @@ const profileRules = {
   ]
 }
 
-const passwordRules = {
+const passwordRules: FormRules = {
   oldPassword: [
     { required: true, message: '请输入原密码', trigger: 'blur' }
   ],
@@ -131,14 +133,30 @@ const refreshUserInfo = async () => {
 const handleUpdateProfile = async () => {
   loading.value = true
   try {
-    const response = await updateUserProfile(profileForm)
+    // 确保所有字段都被发送，包括空值
+    const updateData = {
+      nickname: profileForm.nickname || '',
+      email: profileForm.email || '',
+      phone: profileForm.phone || '',
+      gender: profileForm.gender,
+      birthday: profileForm.birthday || null
+    }
+    console.log('发送的更新数据:', updateData)
+    
+    const response = await updateUserProfile(updateData)
     if (response.code === 200) {
       // 更新本地存储
-      const updatedUser = {
-        ...userStore.currentUser,
-        ...profileForm
+      if (userStore.currentUser) {
+        const updatedUser = {
+          ...userStore.currentUser,
+          nickname: profileForm.nickname,
+          email: profileForm.email,
+          phone: profileForm.phone,
+          gender: profileForm.gender,
+          birthday: profileForm.birthday
+        }
+        userStore.setCurrentUser(updatedUser)
       }
-      userStore.setCurrentUser(updatedUser)
       ElMessage.success('个人信息更新成功')
     }
   } catch (error: any) {

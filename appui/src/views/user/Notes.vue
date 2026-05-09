@@ -3,7 +3,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Delete, Search } from '@element-plus/icons-vue'
-import type { Note } from '@/types/note'
+import type { Note, NoteForm } from '@/types/note'
 import { getNotesApi, createNoteApi, updateNoteApi, deleteNoteApi } from '@/api/note'
 
 const userStore = useUserStore()
@@ -15,7 +15,7 @@ const searchKeyword = ref('')
 // 笔记数据
 const notes = ref<Note[]>([])
 
-const noteForm = reactive({
+const noteForm = reactive<NoteForm>({
   id: undefined,
   title: '',
   content: '',
@@ -109,10 +109,10 @@ const handleSubmit = async () => {
       try {
         if (noteForm.id) {
           // 编辑笔记
-          await updateNoteApi(noteForm.id, noteForm)
+          const response = await updateNoteApi(noteForm.id, noteForm)
           const index = notes.value.findIndex(n => n.id === noteForm.id)
-          if (index !== -1) {
-            notes.value[index] = { ...noteForm } as Note
+          if (index !== -1 && response.data) {
+            notes.value[index] = response.data
           }
           ElMessage.success('笔记更新成功')
         } else {

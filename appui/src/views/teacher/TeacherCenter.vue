@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { HomeFilled, VideoPlay, DataAnalysis, User, Management, Document, Plus } from '@element-plus/icons-vue'
+import { VideoPlay, DataAnalysis, User, Management, Document, Plus } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const router = useRouter()
 
-// 教师统计数据
 const teacherStats = ref({
   courses: 5,
   students: 128,
@@ -16,39 +14,26 @@ const teacherStats = ref({
   totalHours: 420
 })
 
-// 最近课程
 const recentCourses = ref([
-  {
-    id: 1,
-    title: 'Vue3 从入门到精通',
-    students: 45,
-    views: 1200,
-    status: 'published'
-  },
-  {
-    id: 2,
-    title: 'TypeScript 高级编程',
-    students: 38,
-    views: 950,
-    status: 'published'
-  },
-  {
-    id: 3,
-    title: 'React 组件设计模式',
-    students: 45,
-    views: 1350,
-    status: 'published'
-  }
+  { id: 1, title: 'Vue3 从入门到精通', students: 45, views: 1200, status: 'published' },
+  { id: 2, title: 'TypeScript 高级编程', students: 38, views: 950, status: 'published' },
+  { id: 3, title: 'React 组件设计模式', students: 45, views: 1350, status: 'published' }
 ])
 
-// 导航到课程管理
 const goToCourseManagement = () => {
   router.push('/teacher/courses')
 }
 
-// 导航到创建课程
 const goToCreateCourse = () => {
   router.push('/teacher/courses/create')
+}
+
+const handleEdit = (id: number) => {
+  router.push(`/teacher/courses/${id}/edit`)
+}
+
+const handleView = (id: number) => {
+  router.push(`/course/${id}`)
 }
 </script>
 
@@ -58,7 +43,7 @@ const goToCreateCourse = () => {
       <h1>教师中心</h1>
       <p>欢迎回来，{{ userStore.currentUser?.nickname || userStore.currentUser?.username }}</p>
     </div>
-    
+
     <div class="stats-section">
       <el-row :gutter="20">
         <el-col :span="6">
@@ -107,30 +92,22 @@ const goToCreateCourse = () => {
         </el-col>
       </el-row>
     </div>
-    
+
     <div class="actions-section">
       <el-card class="action-card">
         <div class="action-buttons">
-          <el-button
-            type="primary"
-            size="large"
-            @click="goToCreateCourse"
-          >
+          <el-button type="primary" size="large" @click="goToCreateCourse">
             <el-icon><Plus /></el-icon>
             发布新课程
           </el-button>
-          <el-button
-            type="success"
-            size="large"
-            @click="goToCourseManagement"
-          >
+          <el-button type="success" size="large" @click="goToCourseManagement">
             <el-icon><Management /></el-icon>
             管理课程
           </el-button>
         </div>
       </el-card>
     </div>
-    
+
     <div class="recent-courses-section">
       <el-card class="courses-card">
         <template #header>
@@ -152,8 +129,8 @@ const goToCreateCourse = () => {
           </el-table-column>
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" @click="router.push(`/teacher/courses/${row.id}/edit`)"">编辑</el-button>
-              <el-button size="small" type="primary" @click="router.push(`/course/${row.id}`)">查看</el-button>
+              <el-button size="small" @click="handleEdit(row.id)">编辑</el-button>
+              <el-button size="small" type="primary" @click="handleView(row.id)">查看</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -219,21 +196,10 @@ const goToCreateCourse = () => {
   color: white;
 }
 
-.bg-blue {
-  background-color: #409eff;
-}
-
-.bg-green {
-  background-color: #67c23a;
-}
-
-.bg-orange {
-  background-color: #e6a23c;
-}
-
-.bg-purple {
-  background-color: #909399;
-}
+.bg-blue { background-color: #409eff; }
+.bg-green { background-color: #67c23a; }
+.bg-orange { background-color: #e6a23c; }
+.bg-purple { background-color: #909399; }
 
 .stat-content {
   flex: 1;
@@ -281,7 +247,4 @@ const goToCreateCourse = () => {
   font-size: 18px;
   color: #333;
 }
-
-/* 导入Plus图标 */
-@import url('https://unpkg.com/element-plus@2.3.12/dist/index.css');
 </style>

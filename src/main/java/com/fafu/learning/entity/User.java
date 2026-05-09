@@ -3,6 +3,7 @@ package com.fafu.learning.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * 用户实体类
@@ -55,7 +56,7 @@ public class User {
     /**
      * 生日
      */
-    private LocalDateTime birthday;
+    private LocalDate birthday;
     
     /**
      * 角色 USER-普通用户 ADMIN-管理员

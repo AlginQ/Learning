@@ -5,35 +5,20 @@ import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Edit, Delete, Plus, View } from '@element-plus/icons-vue'
 import { getTeacherCoursesApi as getCoursesApi, deleteCourseApi } from '@/api/course'
+import type { Course } from '@/types/course'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-interface CourseItem {
-  id: number
-  title: string
-  description: string
-  categoryId: number
-  studentCount: number
-  status: number
-  auditStatus: number
-  createTime: string
-}
-
 const loading = ref(false)
-const courses = ref<CourseItem[]>([])
+const courses = ref<Course[]>([])
 const searchKeyword = ref('')
 
 // 获取课程列表
 const loadCourses = async () => {
   loading.value = true
   try {
-    const userId = userStore.currentUser?.id || 0
-    if (!userId) {
-      ElMessage.error('请先登录')
-      return
-    }
-    const response = await getCoursesApi(userId)
+    const response = await getCoursesApi()
     if (response.code === 200) {
       courses.value = response.data || []
       console.log('课程数据已加载')
@@ -47,7 +32,7 @@ const loadCourses = async () => {
   }
 }
 
-// 获取分类名称（与数据库category表一致）
+// 获取分类名称（与category表一致）
 const getCategoryName = (categoryId: number): string => {
   const categoryMap: Record<number, string> = {
     1: '全部',

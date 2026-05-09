@@ -240,9 +240,11 @@ public class AuthController {
     @PostMapping("/password")
     public ApiResult<Void> updatePassword(
             HttpServletRequest request,
-            @RequestParam("oldPassword") String oldPassword,
-            @RequestParam("newPassword") String newPassword) {
+            @RequestBody java.util.Map<String, String> params) {
         try {
+            String oldPassword = params.get("oldPassword");
+            String newPassword = params.get("newPassword");
+            
             String token = request.getHeader("Authorization");
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);

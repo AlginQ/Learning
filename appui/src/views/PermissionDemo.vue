@@ -1,9 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { verifyAdminPermission } from '@/utils/permission'
 
 const showAdminContent = ref(false)
+
+// 获取当前用户角色
+const currentRole = computed(() => {
+  return localStorage.getItem('role') || 'USER'
+})
+
+// 判断是否已登录
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('token')
+})
+
+// 判断是否为管理员
+const isAdmin = computed(() => {
+  return localStorage.getItem('role') === 'ADMIN'
+})
 
 // 测试二次权限校验
 const testAdminPermission = async () => {
@@ -39,9 +54,9 @@ const tamperLocalStorage = () => {
     <el-card class="demo-card">
       <h3>权限状态</h3>
       <div class="status-info">
-        <p><strong>当前用户角色:</strong> {{ localStorage.getItem('role') || 'USER' }}</p>
-        <p><strong>是否已登录:</strong> {{ !!localStorage.getItem('token') }}</p>
-        <p><strong>是否为管理员:</strong> {{ localStorage.getItem('role') === 'ADMIN' }}</p>
+        <p><strong>当前用户角色:</strong> {{ currentRole }}</p>
+        <p><strong>是否已登录:</strong> {{ isLoggedIn }}</p>
+        <p><strong>是否为管理员:</strong> {{ isAdmin }}</p>
       </div>
     </el-card>
 

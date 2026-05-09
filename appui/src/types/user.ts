@@ -7,6 +7,18 @@ export interface UserInfo {
   avatar?: string
   role: string
   createTime: string
+  phone?: string
+  gender?: number
+  birthday?: string
+}
+
+// 用户表单类型（用于更新个人信息）
+export interface UserProfileForm {
+  nickname?: string
+  email?: string
+  phone?: string
+  gender?: number
+  birthday?: string
 }
 
 // 登录响应类型 - 匹配后端LoginResponseVO

@@ -16,6 +16,7 @@ import com.fafu.learning.mapper.UserMapper;
 import com.fafu.learning.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,12 @@ public class CourseController {
     
     @Autowired
     private UserMapper userMapper;
+    
+    @Autowired
+    private com.fafu.learning.service.TeacherService teacherService;
+    
+    @Autowired
+    private com.fafu.learning.utils.JwtUtil jwtUtil;
     
     /**
      * 获取课程列表
@@ -192,6 +199,43 @@ public class CourseController {
     }
     
     /**
+     * 获取当前登录教师的课程列表（包含审核状态）
+     */
+    @GetMapping("/teacher")
+    public ApiResult<List<Course>> getTeacherCourses(HttpServletRequest request) {
+        try {
+            // 从请求头获取token
+            String token = request.getHeader("Authorization");
+            if (token == null || token.isEmpty()) {
+                return ApiResult.fail(401, "请先登录");
+            }
+            
+            // 移除Bearer前缀
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            
+            // 解析token获取用户ID
+            Long userId = jwtUtil.getUserIdFromToken(token);
+            if (userId == null) {
+                return ApiResult.fail(401, "请先登录");
+            }
+            
+            // 直接使用用户ID查询课程（课程表中的teacher_id存储的是用户ID）
+            System.out.println("=== 获取教师课程 ===");
+            System.out.println("用户ID: " + userId);
+            
+            // 获取该用户的课程
+            List<Course> courses = courseService.getTeacherCoursesWithAuditStatus(userId);
+            System.out.println("用户ID: " + userId + ", 课程数量: " + (courses != null ? courses.size() : 0));
+            return ApiResult.success(courses);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResult.fail("获取教师课程失败: " + e.getMessage());
+        }
+    }
+    
+    /**
      * 获取待审核课程列表
      */
     @GetMapping("/pending")
@@ -201,19 +245,6 @@ public class CourseController {
             return ApiResult.success(courses);
         } catch (Exception e) {
             return ApiResult.fail("获取待审核课程失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 获取教师课程列表（包含审核状态）
-     */
-    @GetMapping("/teacher/{teacherId}")
-    public ApiResult<List<Course>> getTeacherCourses(@PathVariable Long teacherId) {
-        try {
-            List<Course> courses = courseService.getTeacherCoursesWithAuditStatus(teacherId);
-            return ApiResult.success(courses);
-        } catch (Exception e) {
-            return ApiResult.fail("获取教师课程失败: " + e.getMessage());
         }
     }
     

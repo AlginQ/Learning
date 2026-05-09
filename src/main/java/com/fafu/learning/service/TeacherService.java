@@ -19,4 +19,9 @@ public interface TeacherService extends IService<Teacher> {
      * 根据ID获取讲师
      */
     Teacher getTeacherById(Long id);
+    
+    /**
+     * 根据用户ID获取教师信息
+     */
+    Teacher getByUserId(Long userId);
 }

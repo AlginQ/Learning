@@ -72,9 +72,9 @@ export const auditCourseApi = (id: number, status: number) => {
   return request.put<ApiResponse<null>>(`/api/courses/${id}/audit`, { status })
 }
 
-// 获取教师课程列表
-export const getTeacherCoursesApi = (teacherId: number) => {
-  return request.get<ApiResponse<Course[]>>(`/api/courses/teacher/${teacherId}`)
+// 获取当前登录教师的课程列表
+export const getTeacherCoursesApi = () => {
+  return request.get<ApiResponse<Course[]>>('/api/courses/teacher')
 }
 
 // 获取所有审核通过的课程（管理员专用，包含下架课程）

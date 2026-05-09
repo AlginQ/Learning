@@ -39,7 +39,18 @@ public class StudyProgressController {
             return ApiResult.unauthorized("请先登录");
         }
         
+        System.out.println("=== 查询学习进度 ===");
+        System.out.println("userId: " + userId);
+        System.out.println("lessonId: " + lessonId);
+        
         StudyProgress progress = studyProgressService.getProgress(userId, lessonId);
+        
+        if (progress != null) {
+            System.out.println("查询结果: watchDuration=" + progress.getWatchDuration() + ", progress=" + progress.getProgress());
+        } else {
+            System.out.println("查询结果: null (没有找到进度记录)");
+        }
+        
         return ApiResult.success(progress);
     }
     

@@ -3,7 +3,8 @@ package com.fafu.learning.dto;
 import lombok.Data;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import java.time.LocalDate;
 
 /**
  * 用户信息更新DTO
@@ -37,7 +38,8 @@ public class UserUpdateDTO {
     /**
      * 生日
      */
-    private LocalDateTime birthday;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate birthday;
     
     /**
      * 头像URL

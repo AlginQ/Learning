@@ -1,6 +1,7 @@
 package com.fafu.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fafu.learning.entity.User;
 import com.fafu.learning.mapper.UserMapper;
@@ -260,41 +261,73 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("用户不存在");
         }
         
+        // 使用 UpdateWrapper 明确更新字段
+        UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", userId);
+        boolean hasUpdate = false;
+        
+        // 更新昵称（允许空字符串）
+        if (updateDTO.getNickname() != null) {
+            updateWrapper.set("nickname", updateDTO.getNickname());
+            user.setNickname(updateDTO.getNickname());
+            hasUpdate = true;
+        }
+        
         // 检查邮箱是否被其他用户使用
-        if (updateDTO.getEmail() != null && !updateDTO.getEmail().equals(user.getEmail())) {
-            User existingUser = getByEmail(updateDTO.getEmail());
-            if (existingUser != null && !existingUser.getId().equals(userId)) {
-                throw new RuntimeException("邮箱已被其他用户使用");
+        if (updateDTO.getEmail() != null) {
+            if (!updateDTO.getEmail().equals(user.getEmail())) {
+                User existingUser = getByEmail(updateDTO.getEmail());
+                if (existingUser != null && !existingUser.getId().equals(userId)) {
+                    throw new RuntimeException("邮箱已被其他用户使用");
+                }
             }
+            updateWrapper.set("email", updateDTO.getEmail());
             user.setEmail(updateDTO.getEmail());
+            hasUpdate = true;
         }
         
         // 检查手机号是否被其他用户使用
-        if (updateDTO.getPhone() != null && !updateDTO.getPhone().equals(user.getPhone())) {
-            QueryWrapper<User> phoneQuery = new QueryWrapper<>();
-            phoneQuery.eq("phone", updateDTO.getPhone());
-            User existingUser = getOne(phoneQuery);
-            if (existingUser != null && !existingUser.getId().equals(userId)) {
-                throw new RuntimeException("手机号已被其他用户使用");
+        if (updateDTO.getPhone() != null) {
+            if (!updateDTO.getPhone().equals(user.getPhone())) {
+                QueryWrapper<User> phoneQuery = new QueryWrapper<>();
+                phoneQuery.eq("phone", updateDTO.getPhone());
+                User existingUser = getOne(phoneQuery);
+                if (existingUser != null && !existingUser.getId().equals(userId)) {
+                    throw new RuntimeException("手机号已被其他用户使用");
+                }
             }
+            updateWrapper.set("phone", updateDTO.getPhone());
             user.setPhone(updateDTO.getPhone());
+            hasUpdate = true;
         }
         
-        // 更新其他字段
-        if (updateDTO.getNickname() != null) {
-            user.setNickname(updateDTO.getNickname());
-        }
+        // 更新性别（允许设置为0）
         if (updateDTO.getGender() != null) {
+            updateWrapper.set("gender", updateDTO.getGender());
             user.setGender(updateDTO.getGender());
-        }
-        if (updateDTO.getBirthday() != null) {
-            user.setBirthday(updateDTO.getBirthday());
-        }
-        if (updateDTO.getAvatar() != null) {
-            user.setAvatar(updateDTO.getAvatar());
+            hasUpdate = true;
         }
         
-        updateById(user);
+        // 更新生日
+        if (updateDTO.getBirthday() != null) {
+            updateWrapper.set("birthday", updateDTO.getBirthday());
+            user.setBirthday(updateDTO.getBirthday());
+            hasUpdate = true;
+        }
+        
+        // 更新头像
+        if (updateDTO.getAvatar() != null) {
+            updateWrapper.set("avatar", updateDTO.getAvatar());
+            user.setAvatar(updateDTO.getAvatar());
+            hasUpdate = true;
+        }
+        
+        // 如果有字段需要更新，则执行更新
+        if (hasUpdate) {
+            update(user, updateWrapper);
+            // 更新后重新从数据库获取用户信息，确保返回最新数据
+            user = getById(userId);
+        }
         
         UserInfoVO userInfoVO = new UserInfoVO();
         BeanUtils.copyProperties(user, userInfoVO);

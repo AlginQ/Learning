@@ -71,6 +71,16 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    // 设置当前用户信息
+    setCurrentUser(userInfo: Partial<UserInfo>) {
+      if (this.userInfo) {
+        this.userInfo = { ...this.userInfo, ...userInfo }
+      } else {
+        this.userInfo = userInfo as UserInfo
+      }
+      localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+    },
+
     // 退出登录
     logout() {
       this.userInfo = null

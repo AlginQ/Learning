@@ -159,18 +159,23 @@ const loadCoursesFromApi = async () => {
         courseMap[record.courseId].totalDuration += record.duration || 0
       })
       
-      // 计算每个学习课程的进度
+      // 计算每个学习课程的进度（考虑部分完成）
       Object.values(courseMap).forEach((course: any) => {
         if (course.lessons.length > 0) {
-          const completedLessons = course.lessons.filter((lesson: any) => lesson.progress === 100).length
-          course.progress = Math.round((completedLessons / course.lessons.length) * 100)
+          // 计算平均进度（考虑每个课时的实际观看进度）
+          const totalProgress = course.lessons.reduce((sum: number, lesson: any) => {
+            return sum + (lesson.progress || 0)
+          }, 0)
+          course.progress = Math.round(totalProgress / course.lessons.length)
           
           const lastLesson = course.lessons.sort((a: any, b: any) => 
             new Date(b.studyTime).getTime() - new Date(a.studyTime).getTime()
           )[0]
           course.lastStudyTime = lastLesson ? new Date(lastLesson.studyTime).toLocaleString() : '从未学习'
           
-          course.status = course.progress >= 100 ? 'completed' : 'learning'
+          // 判断是否完成（所有课时进度 >= 90%）
+          const completedLessons = course.lessons.filter((lesson: any) => (lesson.progress || 0) >= 90).length
+          course.status = completedLessons >= course.lessons.length ? 'completed' : 'learning'
         } else {
           course.progress = 0
           course.lastStudyTime = '从未学习'

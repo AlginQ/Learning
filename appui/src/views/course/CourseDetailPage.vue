@@ -61,7 +61,7 @@
                   <p>时长: {{ formatDuration(currentLesson.duration) }} | 进度: {{ currentProgress }}%</p>
                 </div>
                 <div class="video-container">
-                  <!-- B站风格视频播放器 -->
+                  <!-- 视频播放器 -->
                   <div class="bilibili-player" ref="videoPlayer" tabindex="0" @keydown="handleKeyDown">
                     <!-- 视频播放区域 -->
                     <div class="video-area">
@@ -453,12 +453,27 @@ const saveLearningProgress = (courseId: number) => {
   }
 }
 
+// 获取当前用户ID（用于localStorage键的唯一性）
+const getCurrentUserId = (): string => {
+  const userInfo = localStorage.getItem('userInfo')
+  if (userInfo) {
+    try {
+      const user = JSON.parse(userInfo)
+      return user.id || 'anonymous'
+    } catch {
+      return 'anonymous'
+    }
+  }
+  return 'anonymous'
+}
+
 // 保存当前课时进度（同时保存到数据库和localStorage）
 const saveLessonProgress = async (courseId: number, lessonId: number, time: number) => {
-  const storedLessonProgress = localStorage.getItem(`lesson_progress_${courseId}`)
-  const lessonProgress = storedLessonProgress ? JSON.parse(storedLessonProgress) : {}
-  lessonProgress[lessonId] = time
-  localStorage.setItem(`lesson_progress_${courseId}`, JSON.stringify(lessonProgress))
+  // 使用用户ID+课程ID+课时ID作为键，确保每个用户的进度独立
+  const userId = getCurrentUserId()
+  const storageKey = `progress_${userId}_${courseId}_${lessonId}`
+  localStorage.setItem(storageKey, String(time))
+  console.log(`保存进度到localStorage: ${storageKey} = ${time}秒`)
   
   // 如果用户已登录，同步保存到数据库
   const token = localStorage.getItem('token')
@@ -486,7 +501,7 @@ const loadLessonProgress = async (courseId: number, lessonId: number): Promise<n
       if (response.code === 200 && response.data) {
         const progress = response.data as StudyProgress
         const savedTime = progress.watchDuration || 0
-        console.log('从数据库加载进度:', savedTime)
+        console.log(`从数据库加载进度: ${savedTime}秒 (课程${courseId}, 课时${lessonId})`)
         return savedTime
       }
     } catch (error) {
@@ -494,16 +509,20 @@ const loadLessonProgress = async (courseId: number, lessonId: number): Promise<n
     }
   }
   
-  // 从localStorage加载
-  const storedLessonProgress = localStorage.getItem(`lesson_progress_${courseId}`)
-  if (storedLessonProgress) {
+  // 从localStorage加载（使用用户ID确保唯一性）
+  const userId = getCurrentUserId()
+  const storageKey = `progress_${userId}_${courseId}_${lessonId}`
+  const storedProgress = localStorage.getItem(storageKey)
+  if (storedProgress) {
     try {
-      const lessonProgress = JSON.parse(storedLessonProgress)
-      return lessonProgress[lessonId] || 0
+      const savedTime = parseFloat(storedProgress)
+      console.log(`从localStorage加载进度: ${savedTime}秒 (${storageKey})`)
+      return savedTime
     } catch (error) {
       console.error('加载课时进度失败:', error)
     }
   }
+  console.log(`没有找到进度数据，从0开始 (课程${courseId}, 课时${lessonId})`)
   return 0
 }
 
@@ -1507,10 +1526,21 @@ onMounted(() => {
           // 加载课时进度
           loadLessonProgress(id, firstFreeLesson.id).then(savedTime => {
             currentTime.value = savedTime
+            console.log(`初始化课时 ${firstFreeLesson.id}: 加载进度 ${savedTime}秒`)
             // 将进度应用到视频播放器上
-            if (videoElement.value) {
-              videoElement.value.currentTime = currentTime.value
-            }
+            nextTick(() => {
+              if (videoElement.value) {
+                const setCurrentTime = () => {
+                  videoElement.value.currentTime = currentTime.value
+                  console.log(`视频进度已设置为: ${currentTime.value}秒`)
+                }
+                if (videoElement.value.readyState >= 2) {
+                  setCurrentTime()
+                } else {
+                  videoElement.value.addEventListener('loadedmetadata', setCurrentTime, { once: true })
+                }
+              }
+            })
           })
         }
       }
@@ -1526,10 +1556,21 @@ onMounted(() => {
           currentLesson.value = firstFreeLesson
           loadLessonProgress(id, firstFreeLesson.id).then(savedTime => {
             currentTime.value = savedTime
+            console.log(`初始化课时 ${firstFreeLesson.id}: 加载进度 ${savedTime}秒`)
             // 将进度应用到视频播放器上
-            if (videoElement.value) {
-              videoElement.value.currentTime = currentTime.value
-            }
+            nextTick(() => {
+              if (videoElement.value) {
+                const setCurrentTime = () => {
+                  videoElement.value.currentTime = currentTime.value
+                  console.log(`视频进度已设置为: ${currentTime.value}秒`)
+                }
+                if (videoElement.value.readyState >= 2) {
+                  setCurrentTime()
+                } else {
+                  videoElement.value.addEventListener('loadedmetadata', setCurrentTime, { once: true })
+                }
+              }
+            })
           })
         }
       }
@@ -1572,14 +1613,28 @@ onMounted(() => {
   // 添加全屏变化监听器
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   
+  // 添加页面离开时的保存监听
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  window.addEventListener('popstate', handleBeforeUnload)
+  
   // 加载收藏状态
   loadFavoriteStatus()
 })
+
+// 页面离开时保存进度
+const handleBeforeUnload = async () => {
+  if (course.value && currentLesson.value && videoElement.value) {
+    await saveLessonProgress(course.value.id, currentLesson.value.id, videoElement.value.currentTime)
+    saveLearningProgress(course.value.id)
+  }
+}
 
 onUnmounted(() => {
   stopProgressTimer()
   stopRecordTimer()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  window.removeEventListener('popstate', handleBeforeUnload)
 })
 
 const togglePictureInPicture = () => {
@@ -1785,12 +1840,40 @@ const selectLesson = async (lesson: Lesson, chapter: Chapter) => {
   
   // 加载该课时的保存进度
   if (course.value) {
+    console.log(`=== 选择课时 ===`)
+    console.log(`课程ID: ${course.value.id}`)
+    console.log(`课程名称: ${course.value.title}`)
+    console.log(`课时ID: ${lesson.id}`)
+    console.log(`课时序号(lessonNumber): ${lesson.lessonNumber}`)
+    console.log(`课时名称: ${lesson.title}`)
+    
+    // 验证课时ID是否有效
+    if (!lesson.id || lesson.id <= 0) {
+      console.error('课时ID无效:', lesson.id)
+      ElMessage.error('课时数据异常，请刷新页面')
+      return
+    }
+    
     const savedTime = await loadLessonProgress(course.value.id, lesson.id)
     currentTime.value = savedTime
-    // 将进度应用到视频播放器上
-    if (videoElement.value) {
-      videoElement.value.currentTime = currentTime.value
-    }
+    console.log(`加载进度: ${savedTime}秒`)
+    
+    // 等待视频加载完成后再设置进度
+    nextTick(() => {
+      if (videoElement.value) {
+        // 等待视频元数据加载完成
+        const setCurrentTime = () => {
+          videoElement.value.currentTime = currentTime.value
+          console.log(`视频进度已设置为: ${currentTime.value}秒`)
+        }
+        
+        if (videoElement.value.readyState >= 2) {
+          setCurrentTime()
+        } else {
+          videoElement.value.addEventListener('loadedmetadata', setCurrentTime, { once: true })
+        }
+      }
+    })
   }
   
   ElMessage.success(`开始学习: ${lesson.title}`)
@@ -1802,7 +1885,7 @@ let progressInterval: number | null = null
 const startProgressTimer = () => {
   if (progressInterval) clearInterval(progressInterval)
   
-  progressInterval = window.setInterval(() => {
+  progressInterval = window.setInterval(async () => {
     if (isPlaying.value && currentLesson.value && course.value) {
       const duration = currentLesson.value.duration || 1
       currentTime.value = Math.min(duration, currentTime.value + 1)
@@ -1817,7 +1900,7 @@ const startProgressTimer = () => {
       
       // 每10秒保存一次课时进度
       if (currentTime.value % 10 === 0) {
-        saveLessonProgress(course.value.id, currentLesson.value.id, currentTime.value)
+        await saveLessonProgress(course.value.id, currentLesson.value.id, currentTime.value)
       }
       
       // 课时完成判断
